@@ -10,22 +10,21 @@
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 500px; margin: auto; padding: 15px; }
         
-        /* כפתורי ניווט בראש הדף */
         .tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 5px; margin-bottom: 15px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; transition: 0.3s; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; }
         .active-tab { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary); }
         
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 15px; }
         #reader { width: 100%; border-radius: 15px; overflow: hidden; background: #000; border: 2px solid #ddd; }
         
         .price-display { font-size: 50px; font-weight: 800; color: var(--secondary); margin: 5px 0; }
-        .product-name { font-size: 26px; font-weight: 600; margin-top: 10px; }
+        .product-name { font-size: 26px; font-weight: 600; }
         
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fdfdfd; }
-        button.main-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button.main-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; }
         
         .hidden { display: none; }
-        .status-msg { font-size: 14px; color: #64748b; margin-bottom: 10px; text-align: center; }
+        .status-msg { font-size: 14px; color: #64748b; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
@@ -38,24 +37,23 @@
 
     <div class="card">
         <div id="reader"></div>
-        <p class="status-msg" id="statusMsg" style="margin-top:10px;">המצלמה פעילה - סרוק מוצר</p>
+        <p class="status-msg" id="statusMsg">המצלמה מוכנה לסריקה</p>
     </div>
 
-    <div id="customerSection" class="card">
-        <div id="customerResult" style="text-align: center;">
+    <div id="customerSection" class="card hidden">
+        <div style="text-align: center;">
             <div id="prodNameDisplay" class="product-name"></div>
             <div id="prodPriceDisplay" class="price-display"></div>
         </div>
     </div>
 
     <div id="adminSection" class="card hidden">
-        <h3 style="margin-top:0">עדכון/הוספת מוצר</h3>
+        <h3 style="margin-top:0">עדכון מוצר</h3>
         <input type="text" id="adminBarcode" placeholder="ברקוד שנסרק">
         <input type="text" id="adminName" placeholder="שם המוצר">
         <input type="number" id="adminPrice" placeholder="מחיר ב-₪">
-        <button class="main-btn" style="background: var(--secondary);" onclick="saveProduct()">💾 שמור מוצר</button>
-        <hr style="margin: 20px 0; border: 0.5px solid #eee;">
-        <button class="main-btn" style="background: #ef4444; font-size: 14px; padding: 10px;" onclick="clearAllData()">🗑️ איפוס כל המלאי</button>
+        <button class="main-btn" style="background: var(--secondary);" onclick="saveProduct()">💾 שמור</button>
+        <button class="main-btn" style="background: #ef4444; margin-top: 10px; font-size: 12px;" onclick="clearAllData()">🗑️ מחק הכל</button>
     </div>
 </div>
 
@@ -64,48 +62,48 @@
     let html5QrcodeScanner;
 
     function initScanner() {
-        html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-            fps: 15, 
-            qrbox: { width: 250, height: 150 },
-            aspectRatio: 1.0
-        });
+        html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
         html5QrcodeScanner.render(onScanSuccess);
     }
 
     function onScanSuccess(decodedText) {
-        const isAdmin = !document.getElementById('adminSection').classList.contains('hidden');
-        
-        if (isAdmin) {
+        const isAdmin = !document.getElementById('adminBtn').classList.contains('active-tab') === false; 
+        // בדיקה אם אנחנו בטאב מנהל או לקוח
+        const activeTab = document.querySelector('.active-tab').id;
+
+        if (activeTab === 'adminBtn') {
             document.getElementById('adminBarcode').value = decodedText;
             document.getElementById('statusMsg').innerText = "✅ נסרק: " + decodedText;
             vibratePhone(50);
         } else {
             if (inventory[decodedText]) {
+                document.getElementById('customerSection').classList.remove('hidden');
                 document.getElementById('prodNameDisplay').innerText = inventory[decodedText].name;
                 document.getElementById('prodPriceDisplay').innerText = "₪" + inventory[decodedText].price;
-                document.getElementById('statusMsg').innerText = "נמצא!";
+                document.getElementById('statusMsg').innerText = "מוצר נמצא!";
                 vibratePhone(100);
             } else {
-                document.getElementById('prodNameDisplay').innerText = "מוצר לא מוכר";
-                document.getElementById('prodPriceDisplay').innerText = "";
-                document.getElementById('statusMsg').innerText = "ברקוד: " + decodedText;
+                document.getElementById('customerSection').classList.add('hidden');
+                document.getElementById('statusMsg').innerText = "ברקוד " + decodedText + " לא נמצא";
+                vibratePhone([50, 50, 50]);
             }
         }
     }
 
     function showTab(type) {
         if (type === 'admin') {
-            let pass = prompt("סיסמת מנהל:");
+            let pass = prompt("סיסמה:");
             if (pass !== "1234") return;
             document.getElementById('adminSection').classList.remove('hidden');
             document.getElementById('customerSection').classList.add('hidden');
             document.getElementById('adminBtn').classList.add('active-tab');
             document.getElementById('customerBtn').classList.remove('active-tab');
+            document.getElementById('statusMsg').innerText = "מצב מנהל פעיל";
         } else {
             document.getElementById('adminSection').classList.add('hidden');
-            document.getElementById('customerSection').classList.remove('hidden');
-            document.getElementById('customerBtn').classList.add('active-tab');
             document.getElementById('adminBtn').classList.remove('active-tab');
+            document.getElementById('customerBtn').classList.add('active-tab');
+            document.getElementById('statusMsg').innerText = "סרוק מוצר לבדיקת מחיר";
         }
     }
 
@@ -113,29 +111,21 @@
         let bc = document.getElementById('adminBarcode').value;
         let name = document.getElementById('adminName').value;
         let price = document.getElementById('adminPrice').value;
-
         if (bc && name && price) {
             inventory[bc] = { name: name, price: price };
             localStorage.setItem('kioskData', JSON.stringify(inventory));
-            alert("נשמר: " + name);
+            alert("נשמר!");
             document.getElementById('adminBarcode').value = '';
             document.getElementById('adminName').value = '';
             document.getElementById('adminPrice').value = '';
-        } else {
-            alert("מלא הכל!");
         }
     }
 
     function clearAllData() {
-        if(confirm("למחוק הכל?")) {
-            localStorage.clear();
-            location.reload();
-        }
+        if(confirm("למחוק הכל?")) { localStorage.clear(); location.reload(); }
     }
 
-    function vibratePhone(ms) {
-        if (navigator.vibrate) navigator.vibrate(ms);
-    }
+    function vibratePhone(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     window.onload = initScanner;
 </script>

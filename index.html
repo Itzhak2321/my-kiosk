@@ -81,30 +81,32 @@
         }
     }
 
-    async function saveToCloud() {
-        const bc = document.getElementById('adminBarcode').value;
-        const name = document.getElementById('adminName').value;
-        const price = document.getElementById('adminPrice').value;
-        const btn = document.getElementById('saveBtn');
-
-        if (!bc || !name || !price) return alert("מלא הכל");
-
-        btn.innerText = "שומר...";
-        btn.disabled = true;
-
-        inventory[bc] = { name, price };
-
+        async function loadFromCloud() {
+        const syncStatus = document.getElementById('syncIcon');
         try {
-            const content = btoa(JSON.stringify(inventory, null, 2)); // קידוד ל-Base64
             const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`, {
-                method: "PUT",
-                headers: { "Authorization": `token ${GITHUB_CONFIG.token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: "Update inventory",
-                    content: content,
-                    sha: fileSha
-                })
+                headers: { "Authorization": `token ${GITHUB_CONFIG.token}` }
             });
+            
+            if (response.status === 404) {
+                syncStatus.innerText = "❌ שגיאה: קובץ data.json לא נמצא";
+                return;
+            }
+            if (response.status === 401) {
+                syncStatus.innerText = "❌ שגיאה: ה-Token לא תקין";
+                return;
+            }
+
+            const data = await response.json();
+            fileSha = data.sha;
+            inventory = JSON.parse(atob(data.content));
+            syncStatus.innerText = "✅ הענן מסונכרן";
+            syncStatus.style.color = "green";
+        } catch (e) {
+            syncStatus.innerText = "❌ שגיאת חיבור לרשת";
+        }
+    }
+
 
             if (response.ok) {
                 const resData = await response.json();

@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiosk Cloud</title>
+    <title>Kiosk Cloud Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --secondary: #10b981; --bg: #f8fafc; --text: #1e293b; }
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 500px; margin: auto; padding: 10px; }
         .tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin-bottom: 10px; }
-        .tab { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; transition: 0.2s; }
         .active-tab { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary); }
         .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; }
-        #reader { width: 100%; max-width: 300px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #ddd; }
-        .price-display { font-size: 40px; font-weight: 800; color: var(--secondary); margin: 5px 0; }
-        .product-name { font-size: 22px; font-weight: 600; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; }
-        button.main-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 5px; cursor: pointer; }
+        #reader { width: 100%; max-width: 280px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #ddd; }
+        .price-display { font-size: 45px; font-weight: 800; color: var(--secondary); margin: 5px 0; }
+        .product-name { font-size: 24px; font-weight: 600; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button.main-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
         .hidden { display: none; }
-        .status-msg { font-size: 13px; color: #64748b; margin-top: 8px; text-align: center; }
-        #syncIcon { font-size: 12px; color: var(--secondary); display: block; margin-bottom: 5px; }
+        .status-msg { font-size: 13px; color: #64748b; margin-top: 8px; text-align: center; font-weight: bold; }
+        #syncStatus { font-size: 12px; display: block; text-align: center; margin-bottom: 5px; color: #f59e0b; }
     </style>
 </head>
 <body>
@@ -31,10 +31,10 @@
         <button class="tab" id="adminBtn" onclick="showTab('admin')">⚙️ מנהל</button>
     </div>
 
-    <div class="card" style="text-align: center;">
-        <span id="syncIcon">🔄 מסתנכרן עם הענן...</span>
+    <div class="card">
+        <span id="syncStatus">🔄 מתחבר לענן...</span>
         <div id="reader"></div>
-        <p class="status-msg" id="statusMsg">המצלמה מוכנה</p>
+        <p class="status-msg" id="statusMsg">המצלמה מוכנה לסריקה</p>
     </div>
 
     <div id="customerSection" class="card hidden">
@@ -45,8 +45,8 @@
     </div>
 
     <div id="adminSection" class="card hidden">
-        <h3 style="margin:0 0 10px 0; font-size: 18px;">עדכון מוצר בענן</h3>
-        <input type="text" id="adminBarcode" placeholder="ברקוד שנסרק">
+        <h3 style="margin:0 0 10px 0;">עדכון מוצר בענן</h3>
+        <input type="text" id="adminBarcode" placeholder="ברקוד (נסרק או הוקלד)">
         <input type="text" id="adminName" placeholder="שם המוצר">
         <input type="number" id="adminPrice" placeholder="מחיר ב-₪">
         <button id="saveBtn" class="main-btn" style="background: var(--secondary);" onclick="saveToCloud()">💾 שמור לענן</button>
@@ -54,92 +54,118 @@
 </div>
 
 <script>
-    // --- הגדרות גיטהאב - תמלא את הפרטים שלך כאן ---
+    // הגדרות גיטהאב שלך
     const GITHUB_CONFIG = {
-        token: "Ghp_xQf6GJPNs0ZlhvOj8MN9XIyszYWXOp4JZKwr", 
-        username: "itzhak2321", // תשנה לשם המשתמש שלך בגיטהאב
-        repo: "my-kiosk", // שם המאגר
+        token: "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", 
+        username: "itzhak2321", 
+        repo: "my-kiosk", 
         path: "data.json"
     };
 
     let inventory = {};
     let fileSha = "";
 
-    // טעינת נתונים מגיטהאב בזמן פתיחת האפליקציה
+    // טעינת נתונים מהענן
     async function loadFromCloud() {
+        const syncStatus = document.getElementById('syncStatus');
         try {
             const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`, {
                 headers: { "Authorization": `token ${GITHUB_CONFIG.token}` }
             });
-            const data = await response.json();
-            fileSha = data.sha; // נדרש לצורך עדכון הקובץ בהמשך
-            inventory = JSON.parse(atob(data.content)); // פיענוח התוכן מ-Base64
-            document.getElementById('syncIcon').innerText = "✅ הענן מסונכרן";
-        } catch (e) {
-            document.getElementById('syncIcon').innerText = "❌ שגיאת סנכרון";
-            console.error(e);
-        }
-    }
 
-        async function loadFromCloud() {
-        const syncStatus = document.getElementById('syncIcon');
-        try {
-            const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`, {
-                headers: { "Authorization": `token ${GITHUB_CONFIG.token}` }
-            });
-            
-            if (response.status === 404) {
-                syncStatus.innerText = "❌ שגיאה: קובץ data.json לא נמצא";
-                return;
-            }
-            if (response.status === 401) {
-                syncStatus.innerText = "❌ שגיאה: ה-Token לא תקין";
-                return;
+            if (!response.ok) {
+                if(response.status === 404) throw new Error("קובץ data.json לא נמצא במאגר");
+                throw new Error("שגיאת חיבור לגיטהאב");
             }
 
             const data = await response.json();
             fileSha = data.sha;
-            inventory = JSON.parse(atob(data.content));
+            // פיענוח תוכן הקובץ מ-Base64 ותיקון לבעיות עברית (UTF-8)
+            const decodedContent = decodeURIComponent(escape(atob(data.content)));
+            inventory = JSON.parse(decodedContent);
+            
             syncStatus.innerText = "✅ הענן מסונכרן";
             syncStatus.style.color = "green";
         } catch (e) {
-            syncStatus.innerText = "❌ שגיאת חיבור לרשת";
+            syncStatus.innerText = "❌ שגיאה: " + e.message;
+            syncStatus.style.color = "red";
         }
     }
 
+    // שמירת נתונים לענן
+    async function saveToCloud() {
+        const bc = document.getElementById('adminBarcode').value;
+        const name = document.getElementById('adminName').value;
+        const price = document.getElementById('adminPrice').value;
+        const btn = document.getElementById('saveBtn');
+
+        if (!bc || !name || !price) return alert("נא למלא את כל השדות!");
+
+        btn.innerText = "שומר בענן...";
+        btn.disabled = true;
+
+        inventory[bc] = { name, price };
+
+        try {
+            // קידוד התוכן כולל תמיכה בעברית
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(inventory, null, 2))));
+            
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`, {
+                method: "PUT",
+                headers: { 
+                    "Authorization": `token ${GITHUB_CONFIG.token}`,
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify({
+                    message: "Update Kiosk Data",
+                    content: content,
+                    sha: fileSha
+                })
+            });
 
             if (response.ok) {
                 const resData = await response.json();
-                fileSha = resData.content.sha; // עדכון ה-SHA לגרסה החדשה
-                alert("נשמר בהצלחה בענן!");
+                fileSha = resData.content.sha;
+                alert("המוצר '" + name + "' נשמר בהצלחה בענן!");
                 document.getElementById('adminBarcode').value = '';
                 document.getElementById('adminName').value = '';
                 document.getElementById('adminPrice').value = '';
+            } else {
+                throw new Error("השמירה נכשלה");
             }
         } catch (e) {
-            alert("שגיאה בשמירה!");
+            alert("שגיאה בשמירה: " + e.message);
         } finally {
             btn.innerText = "💾 שמור לענן";
             btn.disabled = false;
         }
     }
 
-    // שאר פונקציות הממשק (סריקה ומעבר טאבים)
+    // ניהול סורק ברקוד
     let html5QrcodeScanner;
     function initScanner() {
-        html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: { width: 200, height: 120 } });
+        html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 15, 
+            qrbox: { width: 220, height: 130 },
+            aspectRatio: 1.0
+        });
         html5QrcodeScanner.render(onScanSuccess);
     }
 
     function onScanSuccess(decodedText) {
-        const activeTab = document.querySelector('.active-tab').id;
-        if (activeTab === 'adminBtn') {
+        const isAdmin = !document.getElementById('adminSection').classList.contains('hidden');
+        
+        if (isAdmin) {
             document.getElementById('adminBarcode').value = decodedText;
+            document.getElementById('statusMsg').innerText = "✅ נסרק: " + decodedText;
+            if (navigator.vibrate) navigator.vibrate(50);
         } else {
             if (inventory[decodedText]) {
                 document.getElementById('customerSection').classList.remove('hidden');
                 document.getElementById('prodNameDisplay').innerText = inventory[decodedText].name;
                 document.getElementById('prodPriceDisplay').innerText = "₪" + inventory[decodedText].price;
+                document.getElementById('statusMsg').innerText = "מוצר נמצא!";
+                if (navigator.vibrate) navigator.vibrate(100);
             } else {
                 document.getElementById('customerSection').classList.add('hidden');
                 document.getElementById('statusMsg').innerText = "ברקוד " + decodedText + " לא מוכר";
@@ -149,7 +175,7 @@
 
     function showTab(type) {
         if (type === 'admin') {
-            if (prompt("סיסמה:") !== "1234") return;
+            if (prompt("סיסמת מנהל:") !== "1234") return;
             document.getElementById('adminSection').classList.remove('hidden');
             document.getElementById('customerSection').classList.add('hidden');
             document.getElementById('adminBtn').classList.add('active-tab');
@@ -158,10 +184,14 @@
             document.getElementById('adminSection').classList.add('hidden');
             document.getElementById('adminBtn').classList.remove('active-tab');
             document.getElementById('customerBtn').classList.add('active-tab');
+            document.getElementById('statusMsg').innerText = "סרוק מוצר לבדיקת מחיר";
         }
     }
 
-    window.onload = () => { initScanner(); loadFromCloud(); };
+    window.onload = () => {
+        initScanner();
+        loadFromCloud();
+    };
 </script>
 </body>
 </html>

@@ -1,1 +1,141 @@
-index.html
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiosk Pro</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .container { max-width: 500px; margin: auto; padding: 20px; }
+        
+        /* עיצוב כרטיסיות */
+        .tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 5px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; }
+        .active-tab { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary); }
+
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; background: #000; }
+        
+        .price-display { font-size: 48px; font-weight: 800; color: var(--secondary); margin: 10px 0; }
+        .product-name { font-size: 24px; font-weight: 600; margin-bottom: 5px; }
+
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button.main-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab active-tab" id="customerBtn" onclick="showTab('customer')">📱 לקוח</button>
+        <button class="tab" id="adminBtn" onclick="showTab('admin')">⚙️ מנהל</button>
+    </div>
+
+    <div id="customerSection" class="card">
+        <h2 style="margin-top:0">סרוק מוצר למחיר</h2>
+        <div id="reader"></div>
+        <div id="customerResult" style="text-align: center; margin-top: 20px;">
+            <p id="tapToScanMsg">הסורק פעיל - קרב ברקוד</p>
+            <div id="prodNameDisplay" class="product-name"></div>
+            <div id="prodPriceDisplay" class="price-display"></div>
+        </div>
+    </div>
+
+    <div id="adminSection" class="card hidden">
+        <h2 style="margin-top:0">ניהול מלאי ומחירים</h2>
+        <input type="text" id="adminBarcode" placeholder="ברקוד (סרוק או הקלד)">
+        <input type="text" id="adminName" placeholder="שם מוצר חדש">
+        <input type="number" id="adminPrice" placeholder="מחיר ב-₪">
+        <button class="main-btn" style="background: var(--secondary);" onclick="saveProduct()">💾 שמור מוצר</button>
+        <hr>
+        <button class="main-btn" style="background: #ef4444; margin-top: 10px;" onclick="clearAllData()">🗑️ איפוס כל המלאי</button>
+    </div>
+</div>
+
+<script>
+    let inventory = JSON.parse(localStorage.getItem('kioskData')) || {};
+    let scanner;
+
+    function initScanner() {
+        scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        scanner.render(onScanSuccess);
+    }
+
+    function onScanSuccess(decodedText) {
+        // אם אנחנו במצב לקוח
+        if (!document.getElementById('customerSection').classList.contains('hidden')) {
+            if (inventory[decodedText]) {
+                document.getElementById('prodNameDisplay').innerText = inventory[decodedText].name;
+                document.getElementById('prodPriceDisplay').innerText = "₪" + inventory[decodedText].price;
+                vibratePhone(100);
+            } else {
+                document.getElementById('prodNameDisplay').innerText = "מוצר לא נמצא";
+                document.getElementById('prodPriceDisplay').innerText = "";
+            }
+        } 
+        // אם אנחנו במצב מנהל
+        else {
+            document.getElementById('adminBarcode').value = decodedText;
+            vibratePhone(50);
+        }
+    }
+
+    function showTab(type) {
+        if (type === 'admin') {
+            let pass = prompt("הכנס סיסמת מנהל (ברירת מחדל: 1234):");
+            if (pass !== "1234") return;
+            
+            document.getElementById('adminSection').classList.remove('hidden');
+            document.getElementById('customerSection').classList.add('hidden');
+            document.getElementById('adminBtn').classList.add('active-tab');
+            document.getElementById('customerBtn').classList.remove('active-tab');
+        } else {
+            document.getElementById('adminSection').classList.add('hidden');
+            document.getElementById('customerSection').classList.remove('hidden');
+            document.getElementById('customerBtn').classList.add('active-tab');
+            document.getElementById('adminBtn').classList.remove('active-tab');
+        }
+    }
+
+    function saveProduct() {
+        let bc = document.getElementById('adminBarcode').value;
+        let name = document.getElementById('adminName').value;
+        let price = document.getElementById('adminPrice').value;
+
+        if (bc && name && price) {
+            inventory[bc] = { name: name, price: price };
+            localStorage.setItem('kioskData', JSON.stringify(inventory));
+            alert("נשמר: " + name);
+            document.getElementById('adminName').value = '';
+            document.getElementById('adminPrice').value = '';
+        } else {
+            alert("מלא את כל השדות!");
+        }
+    }
+
+    function clearAllData() {
+        if(confirm("למחוק את כל המוצרים?")) {
+            localStorage.clear();
+            inventory = {};
+            location.reload();
+        }
+    }
+
+    function vibratePhone(ms) {
+        if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    window.onload = initScanner;
+</script>
+
+</body>
+</html>

@@ -3,28 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiosk Pro Max</title>
+    <title>Kiosk Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --primary: #2563eb; --secondary: #10b981; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
+        .container { max-width: 500px; margin: auto; padding: 10px; }
         
-        .tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 5px; margin-bottom: 15px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; }
+        .tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: none; font-size: 15px; }
         .active-tab { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary); }
         
-        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        #reader { width: 100%; border-radius: 15px; overflow: hidden; background: #000; border: 2px solid #ddd; }
+        .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; }
         
-        .price-display { font-size: 50px; font-weight: 800; color: var(--secondary); margin: 5px 0; }
-        .product-name { font-size: 26px; font-weight: 600; }
+        /* הגבלת גובה המצלמה */
+        #reader { 
+            width: 100%; 
+            max-width: 300px; /* הגבלת רוחב */
+            margin: 0 auto;
+            border-radius: 12px; 
+            overflow: hidden; 
+            background: #000; 
+            border: 2px solid #ddd;
+        }
         
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        button.main-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; }
+        .price-display { font-size: 40px; font-weight: 800; color: var(--secondary); margin: 5px 0; }
+        .product-name { font-size: 22px; font-weight: 600; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button.main-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 5px; }
         
         .hidden { display: none; }
-        .status-msg { font-size: 14px; color: #64748b; margin-top: 10px; text-align: center; }
+        .status-msg { font-size: 13px; color: #64748b; margin-top: 8px; text-align: center; }
     </style>
 </head>
 <body>
@@ -35,9 +45,9 @@
         <button class="tab" id="adminBtn" onclick="showTab('admin')">⚙️ מנהל</button>
     </div>
 
-    <div class="card">
+    <div class="card" style="text-align: center;">
         <div id="reader"></div>
-        <p class="status-msg" id="statusMsg">המצלמה מוכנה לסריקה</p>
+        <p class="status-msg" id="statusMsg">המצלמה מוכנה</p>
     </div>
 
     <div id="customerSection" class="card hidden">
@@ -48,12 +58,12 @@
     </div>
 
     <div id="adminSection" class="card hidden">
-        <h3 style="margin-top:0">עדכון מוצר</h3>
+        <h3 style="margin:0 0 10px 0; font-size: 18px;">עדכון מוצר</h3>
         <input type="text" id="adminBarcode" placeholder="ברקוד שנסרק">
         <input type="text" id="adminName" placeholder="שם המוצר">
         <input type="number" id="adminPrice" placeholder="מחיר ב-₪">
         <button class="main-btn" style="background: var(--secondary);" onclick="saveProduct()">💾 שמור</button>
-        <button class="main-btn" style="background: #ef4444; margin-top: 10px; font-size: 12px;" onclick="clearAllData()">🗑️ מחק הכל</button>
+        <button class="main-btn" style="background: #ef4444; margin-top: 8px; font-size: 12px; padding: 8px;" onclick="clearAllData()">🗑️ מחק הכל</button>
     </div>
 </div>
 
@@ -62,30 +72,32 @@
     let html5QrcodeScanner;
 
     function initScanner() {
-        html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
+        // הגדרת גודל ריבוע הסריקה הפנימי
+        html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 15, 
+            qrbox: { width: 200, height: 120 },
+            aspectRatio: 1.0 // שומר על המצלמה ריבועית וקומפקטית
+        });
         html5QrcodeScanner.render(onScanSuccess);
     }
 
     function onScanSuccess(decodedText) {
-        const isAdmin = !document.getElementById('adminBtn').classList.contains('active-tab') === false; 
-        // בדיקה אם אנחנו בטאב מנהל או לקוח
         const activeTab = document.querySelector('.active-tab').id;
 
         if (activeTab === 'adminBtn') {
             document.getElementById('adminBarcode').value = decodedText;
             document.getElementById('statusMsg').innerText = "✅ נסרק: " + decodedText;
-            vibratePhone(50);
+            if (navigator.vibrate) navigator.vibrate(50);
         } else {
             if (inventory[decodedText]) {
                 document.getElementById('customerSection').classList.remove('hidden');
                 document.getElementById('prodNameDisplay').innerText = inventory[decodedText].name;
                 document.getElementById('prodPriceDisplay').innerText = "₪" + inventory[decodedText].price;
                 document.getElementById('statusMsg').innerText = "מוצר נמצא!";
-                vibratePhone(100);
+                if (navigator.vibrate) navigator.vibrate(100);
             } else {
                 document.getElementById('customerSection').classList.add('hidden');
                 document.getElementById('statusMsg').innerText = "ברקוד " + decodedText + " לא נמצא";
-                vibratePhone([50, 50, 50]);
             }
         }
     }
@@ -98,12 +110,11 @@
             document.getElementById('customerSection').classList.add('hidden');
             document.getElementById('adminBtn').classList.add('active-tab');
             document.getElementById('customerBtn').classList.remove('active-tab');
-            document.getElementById('statusMsg').innerText = "מצב מנהל פעיל";
         } else {
             document.getElementById('adminSection').classList.add('hidden');
             document.getElementById('adminBtn').classList.remove('active-tab');
             document.getElementById('customerBtn').classList.add('active-tab');
-            document.getElementById('statusMsg').innerText = "סרוק מוצר לבדיקת מחיר";
+            document.getElementById('statusMsg').innerText = "סרוק לבדיקת מחיר";
         }
     }
 
@@ -114,7 +125,7 @@
         if (bc && name && price) {
             inventory[bc] = { name: name, price: price };
             localStorage.setItem('kioskData', JSON.stringify(inventory));
-            alert("נשמר!");
+            alert("נשמר בהצלחה!");
             document.getElementById('adminBarcode').value = '';
             document.getElementById('adminName').value = '';
             document.getElementById('adminPrice').value = '';
@@ -122,10 +133,8 @@
     }
 
     function clearAllData() {
-        if(confirm("למחוק הכל?")) { localStorage.clear(); location.reload(); }
+        if(confirm("למחוק את כל המלאי?")) { localStorage.clear(); location.reload(); }
     }
-
-    function vibratePhone(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     window.onload = initScanner;
 </script>

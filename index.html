@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <title>מערכת קופה לקיוסק - מחובר לענן</title>
    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -33,6 +34,9 @@
 <div class="grid-container">
    
     <div class="card">
+        <button onclick="startScanner('regBarcode')" style="background:#1a73e8; color:white; margin-top:5px;">📷 סרוק עם המצלמה</button>
+<div id="reader" style="width: 100%; margin-top:10px; display:none;"></div>
+
         <h2>1. הוספת מוצר למלאי</h2>
         <input type="text" id="regBarcode" placeholder="סרוק ברקוד להוספה...">
         <input type="text" id="regName" placeholder="שם המוצר">
@@ -68,6 +72,44 @@
 </div>
 
 <script>
+
+let html5QrCode;
+
+function startScanner(targetInputId) {
+    const readerElement = document.getElementById('reader');
+    readerElement.style.display = 'block'; // הצגת אזור המצלמה
+
+    html5QrCode = new Html5Qrcode("reader");
+    
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+    // התחלת הסריקה (משתמש במצלמה אחורית בטלפון)
+    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+        // מה קורה כשמזוהה ברקוד:
+        document.getElementById(targetInputId).value = decodedText;
+        
+        // עצירת המצלמה אחרי סריקה מוצלחת
+        stopScanner();
+        
+        // אם זה בשדה המכירה, נפעיל את תהליך המכירה אוטומטית
+        if (targetInputId === 'saleScan') {
+            processSale(decodedText); 
+        }
+    }).catch((err) => {
+        console.error("שגיאה בפתיחת מצלמה:", err);
+        alert("לא ניתן לגשת למצלמה. וודא שנתת אישור דפדפן.");
+    });
+}
+
+function stopScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('reader').style.display = 'none';
+        });
+    }
+}
+
+    
     // *** חובה: החלף את הפרטים כאן בפרטים מה-Firebase שלך ***
     const firebaseConfig = {
   apiKey: "AIzaSyCOWSN0aVOpvsguY0CFDR477mKVMj17o98",

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>קופה ניידת - סל קניות בראש</title>
+    <title>קופה חכמה - כפתור חכם</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -11,68 +11,68 @@
 
     <style>
         :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; }
-        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f1f3f4; user-select: none; padding-bottom: 50px; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f1f3f4; user-select: none; padding-bottom: 30px; }
         
-        .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .admin-btn { background: #455a64; border: none; color: white; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; }
+        .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .admin-btn { background: #455a64; border: none; color: white; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 
         .container { padding: 10px; max-width: 500px; margin: auto; }
         
-        /* סל קניות בראש העמוד */
+        /* סל קניות */
         .cart-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-top: 4px solid var(--success); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .cart-table { width: 100%; border-collapse: collapse; font-size: 16px; }
-        .cart-table td { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .total-box { font-size: 34px; font-weight: bold; text-align: center; margin: 15px 0; color: var(--success); }
+        .cart-table td { padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
+        .total-box { font-size: 36px; font-weight: bold; text-align: center; margin: 10px 0; color: var(--success); }
 
-        /* כפתור סריקה */
-        .scan-btn { background: var(--primary); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        #saleReader { width: 100%; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 10px; }
+        /* כפתור סריקה חכם */
+        .scan-toggle-btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+        .btn-open { background: var(--primary); color: white; }
+        .btn-close { background: var(--danger); color: white; }
+        
+        #saleReader { width: 100%; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 15px; border: 2px solid var(--primary); }
 
-        /* מקלדת מחיר כללי */
-        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #ddd; padding: 8px; border-radius: 10px; }
-        .num-btn { background: white; border: none; padding: 15px; font-size: 22px; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 0 #bbb; }
+        /* מקלדת */
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #ddd; padding: 8px; border-radius: 12px; }
+        .num-btn { background: white; border: none; padding: 18px; font-size: 22px; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 0 #bbb; }
         .num-btn:active { background: #eee; transform: translateY(2px); box-shadow: none; }
         .num-btn.add { background: var(--success); color: white; grid-column: span 2; box-shadow: 0 2px 0 #1e7e34; }
         .num-btn.clr { background: var(--danger); color: white; box-shadow: 0 2px 0 #a71d2a; }
 
-        /* בחירה מהירה מהמלאי */
-        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 15px; }
-        .prod-btn { background: white; border: 1px solid #ced4da; padding: 12px 5px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .prod-btn:active { background: #e8f0fe; border-color: var(--primary); }
-        .prod-btn b { display: block; font-size: 14px; color: #333; margin-bottom: 4px; }
-        .prod-btn span { color: var(--success); font-weight: bold; font-size: 13px; }
+        /* מוצרים במלאי */
+        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
+        .prod-btn { background: white; border: 1px solid #ced4da; padding: 15px 5px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .prod-btn b { display: block; font-size: 14px; margin-bottom: 5px; }
+        .prod-btn span { color: var(--success); font-weight: bold; }
 
-        /* ניהול מלאי מוסתר */
-        .admin-panel { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ddd; }
         .hidden { display: none; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        
-        .remove-item { color: var(--danger); font-weight: bold; padding: 0 10px; font-size: 18px; }
+        .admin-panel { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ddd; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div style="font-weight: bold;">My Kiosk 📱</div>
-    <button class="admin-btn" onclick="toggleAdmin()">⚙️ ניהול</button>
+    <div style="font-weight: bold;">קופה ניידת 📱</div>
+    <button class="admin-btn" onclick="toggleAdmin()">⚙️ ניהול מלאי</button>
 </div>
 
 <div class="container">
 
     <div class="cart-card">
-        <h3 style="margin-top:0; font-size:16px; color:#666;">🛒 סל נוכחי:</h3>
         <table class="cart-table" id="cartTable">
             <tbody></tbody>
         </table>
         <div class="total-box" id="totalDisplay">0.00 ₪</div>
-        <button onclick="clearCart()" style="width:100%; background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; color:var(--danger); font-weight:bold;">נקה הכל</button>
+        <button onclick="clearCart()" style="width:100%; background:none; border:none; color:var(--danger); font-weight:bold; padding:5px;">🗑️ נקה סל</button>
     </div>
 
     <div id="saleReader"></div>
-    <button class="scan-btn" onclick="startScanner('saleScan')">📷 סרוק מוצר</button>
+    <button id="mainScanBtn" class="scan-toggle-btn btn-open" onclick="handleScanButton()">
+        <span id="btnIcon">📷</span> <span id="btnText">סרוק מוצר</span>
+    </button>
 
-    <div class="card" style="background:#eee;">
-        <input type="text" id="manualPrice" readonly placeholder="מחיר חופשי..." style="text-align:center; font-size:24px; font-weight:bold; color:var(--dark);">
+    <div style="background:#e9ecef; padding:10px; border-radius:15px; margin-bottom:20px;">
+        <input type="text" id="manualPrice" readonly placeholder="מחיר חופשי..." style="text-align:center; font-size:24px; border:none; background:transparent;">
         <div class="numpad-grid">
             <button class="num-btn" onclick="addNum('1')">1</button>
             <button class="num-btn" onclick="addNum('2')">2</button>
@@ -90,21 +90,22 @@
         </div>
     </div>
 
-    <h3 style="margin: 20px 5px 10px; font-size:16px;">📦 מוצרים במלאי:</h3>
+    <h3 style="font-size:16px; margin:10px 5px;">📦 מוצרים לבחירה מהירה:</h3>
     <div class="quick-grid" id="quickProducts"></div>
 
     <div id="adminSection" class="admin-panel hidden">
         <h3>הוספת מוצר חדש</h3>
-        <input type="text" id="regBarcode" placeholder="ברקוד (או סרוק)">
+        <input type="text" id="regBarcode" placeholder="ברקוד">
         <input type="text" id="regName" placeholder="שם מוצר">
         <input type="number" id="regPrice" placeholder="מחיר">
-        <button onclick="saveToCloud()" style="width:100%; padding:12px; background:var(--dark); color:white; border-radius:6px; border:none; margin-top:5px;">שמור בענן</button>
-        <div id="adminInventory" style="margin-top:15px; font-size:13px; color:#666;"></div>
+        <button onclick="saveToCloud()" style="width:100%; padding:15px; background:var(--dark); color:white; border:none; border-radius:8px; margin-top:10px;">שמור במלאי</button>
+        <div id="adminInventory" style="margin-top:15px; font-size:14px;"></div>
     </div>
 
 </div>
 
 <script>
+    // הגדרות Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCOWSN0aVOpvsguY0CFDR477mKVMj17o98",
         authDomain: "mykiosk-55b08.firebaseapp.com",
@@ -121,26 +122,57 @@
 
     let html5QrCode;
     let isPaused = false;
+    let isScannerOpen = false;
     let cart = [];
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
 
-    function startScanner() {
-        const reader = document.getElementById('saleReader');
-        reader.style.display = 'block';
-        if (html5QrCode) html5QrCode.stop().then(() => doStart());
-        else doStart();
+    // טיפול בכפתור החכם
+    function handleScanButton() {
+        if (isScannerOpen) {
+            stopScanner();
+        } else {
+            startScanner();
+        }
     }
 
-    function doStart() {
+    function startScanner() {
+        isScannerOpen = true;
+        const btn = document.getElementById('mainScanBtn');
+        const reader = document.getElementById('saleReader');
+        
+        // שינוי עיצוב הכפתור לסגירה
+        btn.classList.remove('btn-open');
+        btn.classList.add('btn-close');
+        document.getElementById('btnText').innerText = "סגור מצלמה";
+        document.getElementById('btnIcon').innerText = "🛑";
+        reader.style.display = 'block';
+
         html5QrCode = new Html5Qrcode("saleReader");
         html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
             if (isPaused) return;
             isPaused = true;
             beep.play();
             processSale(text);
-            setTimeout(() => { isPaused = false; }, 2000);
+            setTimeout(() => { isPaused = false; }, 2000); // הפסקה קצרה לסריקה הבאה
         });
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                isScannerOpen = false;
+                const btn = document.getElementById('mainScanBtn');
+                const reader = document.getElementById('saleReader');
+                
+                // החזרת הכפתור למצב פתיחה
+                btn.classList.remove('btn-close');
+                btn.classList.add('btn-open');
+                document.getElementById('btnText').innerText = "סרוק מוצר";
+                document.getElementById('btnIcon').innerText = "📷";
+                reader.style.display = 'none';
+            });
+        }
     }
 
     function processSale(barcode) {
@@ -165,7 +197,7 @@
             tbody.innerHTML += `<tr>
                 <td style="font-weight:bold">${item.name}</td>
                 <td style="text-align:left">${item.price.toFixed(2)} ₪</td>
-                <td style="width:30px; text-align:center" onclick="removeItem(${index})"><span class="remove-item">✕</span></td>
+                <td style="width:30px; text-align:center; color:red; font-weight:bold;" onclick="removeItem(${index})">✕</td>
             </tr>`;
             total += item.price;
         });
@@ -173,24 +205,24 @@
     }
 
     function removeItem(i) { cart.splice(i, 1); updateCartUI(); }
-    function clearCart() { if(confirm("לנקות הכל?")) { cart = []; updateCartUI(); } }
+    function clearCart() { if(confirm("לנקות את כל הסל?")) { cart = []; updateCartUI(); } }
 
     // מקלדת מספרים
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
     function addManualPrice() {
         const p = document.getElementById('manualPrice').value;
-        if (p) { addToCart("מחיר כללי", parseFloat(p)); clearNum(); }
+        if (p) { addToCart("כללי", parseFloat(p)); clearNum(); }
     }
 
-    // ניהול מלאי
+    // ניהול מלאי מהענן
     function saveToCloud() {
         const b = document.getElementById('regBarcode').value;
         const n = document.getElementById('regName').value;
         const p = document.getElementById('regPrice').value;
         if (b && n && p) {
             db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) });
-            alert("התווסף למלאי!");
+            alert("המוצר נוסף!");
         }
     }
 
@@ -205,11 +237,11 @@
             quick.innerHTML += `<div class="prod-btn" onclick="addToCart('${p.name}', ${p.price})">
                 <b>${p.name}</b><span>${p.price} ₪</span>
             </div>`;
-            admin.innerHTML += `• ${p.name} (${p.price}₪) <span onclick="del('${id}')" style="color:red">מחק</span><br>`;
+            admin.innerHTML += `• ${p.name} - ${p.price}₪ <span onclick="del('${id}')" style="color:red; margin-right:10px;">[מחק]</span><br>`;
         }
     });
 
-    function del(id) { if(confirm("למחוק?")) db.ref('inventory/' + id).remove(); }
+    function del(id) { if(confirm("למחוק מהמלאי?")) db.ref('inventory/' + id).remove(); }
 </script>
 </body>
 </html>

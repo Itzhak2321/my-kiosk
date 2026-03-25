@@ -53,23 +53,22 @@
     </div>
 
     <div class="card">
-        <h2>2. ביצוע מכירה</h2>
-        <div class="barcode-scan-area" style="padding:10px; border-radius:8px;">
-            <input type="text" id="saleBarcode" placeholder="סרוק מוצר למכירה..." onkeypress="handleSaleScan(event)" autofocus>
-        </div>
-       
-        <table id="cartTable">
-            <thead>
-                <tr><th>מוצר</th><th>מחיר</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-       
-        <div class="total-section" id="totalDisplay">סה"כ: 0.00 ₪</div>
-        <button class="btn-clear" onclick="clearCart()">נקה סל קניות</button>
+    <h2>2. ביצוע מכירה</h2>
+
+    <button onclick="startScanner('saleScan')" style="background:#28a745; color:white; margin-top:5px; width: 100%; padding: 10px; border-radius: 5px; cursor: pointer;">📷 סרוק מוצר למכירה</button>
+    <input type="text" id="saleScan" placeholder="סרוק מוצר למכירה..." onkeypress="handleSaleScan(event)" autofocus>
+    
+    <table id="cartTable">
+        <thead>
+            <tr>
+                <th>מוצר</th>
+                <th>מחיר</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
     </div>
 
-</div>
 
 <script>
 

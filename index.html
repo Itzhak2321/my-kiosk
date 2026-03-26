@@ -183,8 +183,19 @@
 
     // --- הוספתי את זה בשבילך: פונקציה שמקבלת סריקה מהאפליקציה ---
     function updateBarcode(barcode) {
+    const adminSection = document.getElementById('adminSection');
+    
+    // בודק אם תפריט הניהול פתוח (לא מוסתר)
+    if (!adminSection.classList.contains('hidden')) {
+        // אנחנו במצב ניהול מלאי - שים את הברקוד בשדה הרישום
+        document.getElementById('regBarcode').value = barcode;
+        beep.play();
+        alert("ברקוד נקלט במערכת הניהול: " + barcode);
+    } else {
+        // אנחנו במצב מכירה רגיל
         processSale(barcode);
     }
+}
 
     function addToCart(name, price) {
         cart.push({ name, price });

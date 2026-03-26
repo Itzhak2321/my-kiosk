@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>פינה בכיכר - קופה חכמה</title>
+    <title>פינה בכיכר - גרסה יציבה</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
@@ -20,7 +20,7 @@
         .modal-body { max-height: 350px; overflow-y: auto; margin-top: 15px; }
 
         .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); margin: 10px 0; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; }
         .btn-header { background:#455a64; color:white; border:none; padding:8px 12px; border-radius:5px; margin-right: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
         
         .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #ddd; padding: 10px; border-radius: 15px; }
@@ -37,13 +37,14 @@
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
         .status-msg { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 20px; border-radius: 20px; font-weight: bold; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .btn-delete-cust { background: none; color: var(--danger); font-size: 13px; text-decoration: underline; margin-top: 20px; border: none; cursor: pointer; }
+        .btn-delete-step1 { background: none; color: var(--danger); font-size: 13px; text-decoration: underline; margin-top: 20px; border: none; cursor: pointer; }
+        .btn-delete-confirm { background: var(--danger); color: white; padding: 10px; border-radius: 10px; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div style="font-size: 18px; font-weight: bold;">פינה בכיכר 🌳</div>
+    <div style="font-size: 18px; font-weight: bold;">פינה בכיכר</div>
     <div style="display: flex;">
         <button onclick="openProductsModal()" class="btn-header">🛍️ מוצרים</button>
         <button onclick="toggleAdmin()" class="btn-header">⚙️ ניהול</button>
@@ -116,9 +117,11 @@
         <hr style="border:0; border-top:1px solid #eee;">
         <input type="number" id="payAmount" placeholder="סכום זיכוי/תשלום...">
         <button onclick="payDebt()" class="btn" style="background:var(--success); color:white;">בצע זיכוי ✅</button>
-        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 10px;">סגור חלון</button>
+        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 10px;">סגור</button>
         
-        <button onclick="deleteCustomerActual()" class="btn-delete-cust">מחק לקוח זה לצמיתות</button>
+        <br>
+        <button id="delBtnStep1" onclick="showDeleteConfirm()" class="btn-delete-step1">מחק לקוח לצמיתות</button>
+        <button id="delBtnActual" onclick="deleteCustomerActual()" class="btn btn-delete-confirm">בטוח? לחץ כאן למחיקה סופית</button>
     </div>
 </div>
 
@@ -151,7 +154,6 @@
     function showStatus(t, type='success') {
         const s = document.getElementById('statusMsg'); s.innerText = t;
         s.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
-        s.style.color = type === 'success' ? '#155724' : '#721c24';
         s.classList.remove('hidden'); setTimeout(() => s.classList.add('hidden'), 2500);
     }
 
@@ -179,7 +181,6 @@
         const n = document.getElementById('custName').value, p = document.getElementById('custPhone').value;
         if(n && p) db.ref('customers/' + p).set({name: n, balance: 0}).then(() => {
             document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
-            showStatus("לקוח נוסף בהצלחה");
         });
     }
 
@@ -200,6 +201,8 @@
         document.getElementById('mCustName').innerText = customers[id].name;
         document.getElementById('mCustPhone').innerText = "טלפון: " + id;
         document.getElementById('mCustBalance').innerText = customers[id].balance.toFixed(2) + " ₪";
+        document.getElementById('delBtnStep1').style.display = 'inline-block';
+        document.getElementById('delBtnActual').style.display = 'none';
         document.getElementById('customerModal').style.display = 'flex';
     }
     function closeCustomerModal() { document.getElementById('customerModal').style.display = 'none'; }
@@ -208,24 +211,26 @@
         const amount = parseFloat(document.getElementById('payAmount').value);
         if(!amount || !selectedCustId) return;
         db.ref('customers/' + selectedCustId + '/balance').set(customers[selectedCustId].balance - amount).then(() => {
-            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("היתרה עודכנה!");
+            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("עודכן!");
         });
     }
 
-    // פונקציית המחיקה החדשה
+    // פונקציות מחיקה ללא confirm שתוקע
+    function showDeleteConfirm() {
+        document.getElementById('delBtnStep1').style.display = 'none';
+        document.getElementById('delBtnActual').style.display = 'block';
+    }
+
     function deleteCustomerActual() {
         if (!selectedCustId) return;
-        if (confirm(`האם אתה בטוח שברצונך למחוק את ${customers[selectedCustId].name}? כל נתוני החוב יימחקו.`)) {
-            db.ref('customers/' + selectedCustId).remove().then(() => {
-                closeCustomerModal();
-                showStatus("הלקוח נמחק מהמערכת");
-            });
-        }
+        db.ref('customers/' + selectedCustId).remove().then(() => {
+            closeCustomerModal();
+            showStatus("הלקוח נמחק");
+        });
     }
 
     function openProductsModal() {
         document.getElementById('productsModal').style.display = 'flex';
-        document.getElementById('quickSearchInput').value = '';
         renderQuickProducts(inventory);
     }
     function closeProductsModal() { document.getElementById('productsModal').style.display = 'none'; }
@@ -246,7 +251,6 @@
         const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
         if(b && n && p) db.ref('inventory/' + b).set({name: n, price: parseFloat(p)}).then(() => {
             document.getElementById('regBarcode').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPrice').value = '';
-            showStatus("מוצר נשמר במלאי");
         });
     }
     db.ref('inventory').on('value', snap => {
@@ -262,7 +266,7 @@
         const total = parseFloat(document.getElementById('totalDisplay').innerText);
         if(id === 'walkin' || total === 0) return showStatus("בחר לקוח", "error");
         db.ref('customers/' + id + '/balance').set((customers[id].balance || 0) + total).then(() => {
-            cart = []; updateUI(); showStatus("חויב בהצלחה");
+            cart = []; updateUI(); showStatus("חויב!");
         });
     }
 

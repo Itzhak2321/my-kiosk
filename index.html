@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>קופה חכמה v3</title>
+    <title>קופה חכמה v3.5</title>
     
     <meta name="theme-color" content="#2c3e50">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22KioskApp%22,%22short_name%22:%22Kiosk%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#f1f3f4%22,%22theme_color%22:%22#2c3e50%22}">
-
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
@@ -18,7 +15,7 @@
         :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; user-select: none; padding-bottom: 30px; overflow-x: hidden; }
         .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .admin-btn { background: #455a64; border: none; color: white; padding: 8px 15px; border-radius: 6px; font-size: 14px; }
+        .admin-btn { background: #455a64; border: none; color: white; padding: 8px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; }
         .container { padding: 10px; max-width: 500px; margin: auto; }
         
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -40,34 +37,42 @@
 
         .search-input { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; }
         .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-        .prod-btn { background: white; border: 1px solid #ddd; padding: 15px 5px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .prod-btn b { display: block; font-size: 15px; margin-bottom: 5px; color: #333; }
-        .prod-btn span { color: var(--success); font-weight: bold; font-size: 14px; }
+        .prod-btn { background: white; border: 1px solid #ddd; padding: 15px 5px; border-radius: 12px; text-align: center; }
+        .prod-btn b { display: block; font-size: 15px; margin-bottom: 5px; }
 
         .hidden { display: none; }
-        .admin-panel { background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #ddd; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; }
+        .admin-panel { background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-top: 5px solid var(--dark); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div style="font-size: 18px; font-weight: bold;">My Kiosk 📱</div>
-    <button class="admin-btn" onclick="toggleAdmin()">⚙️ ניהול</button>
+    <button class="admin-btn" onclick="toggleAdmin()">⚙️ ניהול מלאי</button>
 </div>
 
 <div class="container">
+    <div id="adminSection" class="admin-panel hidden">
+        <h3 style="margin-top:0">הוספת מוצר חדש</h3>
+        <p style="font-size: 14px; color: #666;">סרוק ברקוד באפליקציה כשהתפריט הזה פתוח</p>
+        <input type="text" id="regBarcode" placeholder="ברקוד (נסרק אוטומטית)">
+        <input type="text" id="regName" placeholder="שם המוצר">
+        <input type="number" id="regPrice" placeholder="מחיר בשקלים">
+        <button onclick="saveToCloud()" style="width:100%; padding:15px; background:var(--dark); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">💾 שמור במלאי</button>
+        <div id="adminInventory" style="margin-top:15px; font-size:14px; border-top:1px solid #eee; padding-top:10px; max-height: 150px; overflow-y: auto;"></div>
+    </div>
+
     <div class="card" style="border-top: 5px solid var(--success);">
         <div style="max-height: 200px; overflow-y: auto;">
             <table class="cart-table" id="cartTable"><tbody></tbody></table>
         </div>
         <div class="total-box" id="totalDisplay">0.00 ₪</div>
-        <button onclick="clearCart()" style="width:100%; background:none; border:none; color:var(--danger); font-weight:bold; padding:10px; font-size:16px;">🗑️ נקה הכל</button>
+        <button onclick="clearCart()" style="width:100%; background:none; border:none; color:var(--danger); font-weight:bold; padding:10px; font-size:16px; cursor:pointer;">🗑️ נקה סל</button>
     </div>
 
-    <div id="saleReader"></div>
-    <button id="mainScanBtn" class="scan-toggle-btn btn-open" onclick="handleScanButton()">
-        <span id="btnIcon">📷</span> <span id="btnText">סרוק מוצר</span>
+    <button id="mainScanBtn" class="scan-toggle-btn btn-open" onclick="handleScanButton()" style="display:none;">
+        📷 סרוק מוצר
     </button>
 
     <div class="card" style="background:#e9ecef; border:none;">
@@ -77,38 +82,27 @@
             <button class="num-btn" onclick="addNum('8')">8</button>
             <button class="num-btn" onclick="addNum('9')">9</button>
             <button class="num-btn clr" onclick="clearNum()">C</button>
-            
             <button class="num-btn" onclick="addNum('4')">4</button>
             <button class="num-btn" onclick="addNum('5')">5</button>
             <button class="num-btn" onclick="addNum('6')">6</button>
             <button class="num-btn mul" onclick="addNum(' X ')">X</button>
-            
             <button class="num-btn" onclick="addNum('1')">1</button>
             <button class="num-btn" onclick="addNum('2')">2</button>
             <button class="num-btn" onclick="addNum('3')">3</button>
             <button class="num-btn" onclick="addNum('.')">.</button>
-            
             <button class="num-btn" onclick="addNum('0')">0</button>
-            <button class="num-btn add" onclick="addManualPrice()">➕ הוסף</button>
+            <button class="num-btn add" onclick="addManualPrice()">➕ הוסף לסל</button>
         </div>
     </div>
 
     <div style="margin: 20px 0;">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 חיפוש מהיר..." oninput="filterProducts()">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 חיפוש מוצר במלאי..." oninput="filterProducts()">
         <div class="quick-grid" id="quickProducts"></div>
-    </div>
-
-    <div id="adminSection" class="admin-panel hidden">
-        <h3 style="margin-top:0">ניהול מלאי</h3>
-        <input type="text" id="regBarcode" placeholder="ברקוד">
-        <input type="text" id="regName" placeholder="שם מוצר">
-        <input type="number" id="regPrice" placeholder="מחיר בש''ח">
-        <button onclick="saveToCloud()" style="width:100%; padding:15px; background:var(--dark); color:white; border:none; border-radius:10px; font-weight:bold;">שמור בענן</button>
-        <div id="adminInventory" style="margin-top:15px; font-size:14px; border-top:1px solid #eee; padding-top:10px;"></div>
     </div>
 </div>
 
 <script>
+    // הגדרות Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCOWSN0aVOpvsguY0CFDR477mKVMj17o98",
         authDomain: "mykiosk-55b08.firebaseapp.com",
@@ -123,39 +117,61 @@
     const db = firebase.database();
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
 
-    let html5QrCode, isPaused = false, isScannerOpen = false, cart = [], inventoryData = {};
+    let cart = [], inventoryData = {};
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
 
-    function handleScanButton() {
-        if (isScannerOpen) stopScanner();
-        else startScanner();
-    }
-    function startScanner() {
-        isScannerOpen = true;
-        document.getElementById('mainScanBtn').className = "scan-toggle-btn btn-close";
-        document.getElementById('btnText').innerText = "סגור מצלמה";
-        document.getElementById('btnIcon').innerText = "🛑";
-        document.getElementById('saleReader').style.display = 'block';
-        html5QrCode = new Html5Qrcode("saleReader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: {width: 250, height: 150} }, (text) => {
-            if (isPaused) return;
-            isPaused = true; 
-            processSale(text);
-            setTimeout(() => isPaused = false, 2000);
-        });
-    }
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                isScannerOpen = false;
-                document.getElementById('mainScanBtn').className = "scan-toggle-btn btn-open";
-                document.getElementById('btnText').innerText = "סרוק מוצר";
-                document.getElementById('btnIcon').innerText = "📷";
-                document.getElementById('saleReader').style.display = 'none';
-            });
+    // פונקציית הקישור לאפליקציה - הסורק קורא לזה!
+    function updateBarcode(barcode) {
+        const adminSection = document.getElementById('adminSection');
+        
+        if (!adminSection.classList.contains('hidden')) {
+            // אם תפריט הניהול פתוח - הברקוד הולך לשדה הרישום
+            document.getElementById('regBarcode').value = barcode;
+            document.getElementById('regName').value = '';
+            document.getElementById('regPrice').value = '';
+            document.getElementById('regName').focus(); // מעביר פוקוס לשם
+            beep.play();
+        } else {
+            // אם התפריט סגור - מכירה רגילה
+            processSale(barcode);
         }
     }
+
+    function processSale(barcode) {
+        db.ref('inventory/' + barcode).once('value').then(snap => {
+            const p = snap.val();
+            if (p) {
+                addToCart(p.name, p.price);
+            } else {
+                alert("מוצר לא רשום: " + barcode);
+            }
+        });
+    }
+
+    function addToCart(name, price) {
+        cart.push({ name, price });
+        updateCartUI();
+        beep.play();
+    }
+
+    function updateCartUI() {
+        const tbody = document.querySelector('#cartTable tbody');
+        tbody.innerHTML = ''; 
+        let total = 0;
+        cart.forEach((item, index) => {
+            tbody.innerHTML += `<tr><td style="font-weight:600">${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="removeFromCart(${index})" style="color:var(--danger);width:40px;text-align:center;font-size:22px;">✕</td></tr>`;
+            total += item.price;
+        });
+        document.getElementById('totalDisplay').innerText = total.toFixed(2) + " ₪";
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+    }
+
+    function clearCart() { if(cart.length > 0 && confirm("לנקות את הסל?")) { cart = []; updateCartUI(); } }
 
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
@@ -173,45 +189,36 @@
         clearNum();
     }
 
-    function processSale(barcode) {
-        db.ref('inventory/' + barcode).once('value').then(snap => {
-            const p = snap.val();
-            if (p) addToCart(p.name, p.price);
-            else alert("ברקוד לא מוכר: " + barcode);
-        });
+    function saveToCloud() {
+        const b = document.getElementById('regBarcode').value;
+        const n = document.getElementById('regName').value;
+        const p = document.getElementById('regPrice').value;
+        if (b && n && p) {
+            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => {
+                document.getElementById('regBarcode').value = '';
+                document.getElementById('regName').value = '';
+                document.getElementById('regPrice').value = '';
+                alert("המוצר נשמר במלאי!");
+            });
+        } else {
+            alert("חובה למלא את כל השדות");
+        }
     }
 
-    // --- הוספתי את זה בשבילך: פונקציה שמקבלת סריקה מהאפליקציה ---
-    function updateBarcode(barcode) {
-    const adminSection = document.getElementById('adminSection');
-    
-    // בודק אם תפריט הניהול פתוח (לא מוסתר)
-    if (!adminSection.classList.contains('hidden')) {
-        // אנחנו במצב ניהול מלאי - שים את הברקוד בשדה הרישום
-        document.getElementById('regBarcode').value = barcode;
-        beep.play();
-        alert("ברקוד נקלט במערכת הניהול: " + barcode);
-    } else {
-        // אנחנו במצב מכירה רגיל
-        processSale(barcode);
-    }
-}
+    // חיפוש ומלאי
+    db.ref('inventory').on('value', snap => {
+        inventoryData = snap.val() || {};
+        filterProducts();
+        const adminInv = document.getElementById('adminInventory');
+        adminInv.innerHTML = '';
+        for (let id in inventoryData) {
+            adminInv.innerHTML += `<div style="padding:5px 0; border-bottom:1px solid #eee;">• ${inventoryData[id].name} (${inventoryData[id].price}₪) <span onclick="deleteProduct('${id}')" style="color:red; float:left; cursor:pointer;">מחק</span></div>`;
+        }
+    });
 
-    function addToCart(name, price) {
-        cart.push({ name, price });
-        updateCartUI();
-        beep.play();
+    function deleteProduct(id) {
+        if(confirm('למחוק את המוצר לצמיתות?')) db.ref('inventory/' + id).remove();
     }
-    function updateCartUI() {
-        const tbody = document.querySelector('#cartTable tbody');
-        tbody.innerHTML = ''; let total = 0;
-        cart.forEach((item, index) => {
-            tbody.innerHTML += `<tr><td style="font-weight:600">${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${index},1);updateCartUI()" style="color:var(--danger);width:40px;text-align:center;font-size:22px;">✕</td></tr>`;
-            total += item.price;
-        });
-        document.getElementById('totalDisplay').innerText = total.toFixed(2) + " ₪";
-    }
-    function clearCart() { if(confirm("לנקות את המכירה?")) { cart = []; updateCartUI(); } }
 
     function filterProducts() {
         const term = document.getElementById('searchInput').value.toLowerCase();
@@ -220,30 +227,8 @@
         for (let id in inventoryData) {
             const p = inventoryData[id];
             if (p.name.toLowerCase().includes(term)) {
-                quick.innerHTML += `<div class="prod-btn" onclick="addToCart('${p.name}', ${p.price})"><b>${p.name}</b><span>${p.price} ₪</span></div>`;
+                quick.innerHTML += `<div class="prod-btn card" onclick="addToCart('${p.name}', ${p.price})"><b>${p.name}</b><span style="color:var(--success); font-weight:bold;">${p.price} ₪</span></div>`;
             }
-        }
-    }
-
-    db.ref('inventory').on('value', snap => {
-        inventoryData = snap.val() || {};
-        filterProducts();
-        const admin = document.getElementById('adminInventory');
-        admin.innerHTML = '';
-        for (let id in inventoryData) {
-            admin.innerHTML += `<div style="margin-bottom:8px;">• ${inventoryData[id].name} (${inventoryData[id].price}₪) <span onclick="if(confirm('למחוק מהמלאי?'))db.ref('inventory/${id}').remove()" style="color:red; float:left;">מחק</span></div>`;
-        }
-    });
-
-    function saveToCloud() {
-        const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
-        if (b && n && p) {
-            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => {
-                document.getElementById('regBarcode').value = '';
-                document.getElementById('regName').value = '';
-                document.getElementById('regPrice').value = '';
-                alert("המוצר נוסף בהצלחה!");
-            });
         }
     }
 </script>

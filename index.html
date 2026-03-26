@@ -21,19 +21,16 @@
         .admin-btn { background: #455a64; border: none; color: white; padding: 8px 15px; border-radius: 6px; font-size: 14px; }
         .container { padding: 10px; max-width: 500px; margin: auto; }
         
-        /* סל קניות */
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .total-box { font-size: 40px; font-weight: bold; text-align: center; margin: 10px 0; color: var(--success); }
         .cart-table { width: 100%; border-collapse: collapse; }
         .cart-table td { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 18px; }
         
-        /* כפתור סריקה חכם */
         #saleReader { width: 100%; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 15px; border: 3px solid var(--primary); }
         .scan-toggle-btn { width: 100%; padding: 20px; border: none; border-radius: 15px; font-size: 20px; font-weight: bold; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .btn-open { background: var(--primary); color: white; }
         .btn-close { background: var(--danger); color: white; }
 
-        /* מקלדת */
         .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #ddd; padding: 10px; border-radius: 15px; }
         .num-btn { background: white; border: none; padding: 20px 5px; font-size: 22px; font-weight: bold; border-radius: 10px; box-shadow: 0 3px 0 #bbb; }
         .num-btn:active { background: #eee; transform: translateY(2px); box-shadow: none; }
@@ -41,7 +38,6 @@
         .num-btn.clr { background: var(--danger); color: white; box-shadow: 0 3px 0 #a71d2a; }
         .num-btn.mul { background: #ff9800; color: white; box-shadow: 0 3px 0 #e68a00; }
 
-        /* חיפוש ומוצרים */
         .search-input { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; }
         .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
         .prod-btn { background: white; border: 1px solid #ddd; padding: 15px 5px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -61,7 +57,6 @@
 </div>
 
 <div class="container">
-
     <div class="card" style="border-top: 5px solid var(--success);">
         <div style="max-height: 200px; overflow-y: auto;">
             <table class="cart-table" id="cartTable"><tbody></tbody></table>
@@ -114,7 +109,6 @@
 </div>
 
 <script>
-    // הגדרות Firebase - אל תשנה את זה
     const firebaseConfig = {
         apiKey: "AIzaSyCOWSN0aVOpvsguY0CFDR477mKVMj17o98",
         authDomain: "mykiosk-55b08.firebaseapp.com",
@@ -133,7 +127,6 @@
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
 
-    // טיפול בסורק
     function handleScanButton() {
         if (isScannerOpen) stopScanner();
         else startScanner();
@@ -148,7 +141,6 @@
         html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: {width: 250, height: 150} }, (text) => {
             if (isPaused) return;
             isPaused = true; 
-            beep.play();
             processSale(text);
             setTimeout(() => isPaused = false, 2000);
         });
@@ -165,7 +157,6 @@
         }
     }
 
-    // מקלדת וכמות
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
     function addManualPrice() {
@@ -182,7 +173,6 @@
         clearNum();
     }
 
-    // הוספה לסל
     function processSale(barcode) {
         db.ref('inventory/' + barcode).once('value').then(snap => {
             const p = snap.val();
@@ -190,6 +180,12 @@
             else alert("ברקוד לא מוכר: " + barcode);
         });
     }
+
+    // --- הוספתי את זה בשבילך: פונקציה שמקבלת סריקה מהאפליקציה ---
+    function updateBarcode(barcode) {
+        processSale(barcode);
+    }
+
     function addToCart(name, price) {
         cart.push({ name, price });
         updateCartUI();
@@ -206,7 +202,6 @@
     }
     function clearCart() { if(confirm("לנקות את המכירה?")) { cart = []; updateCartUI(); } }
 
-    // חיפוש ומלאי
     function filterProducts() {
         const term = document.getElementById('searchInput').value.toLowerCase();
         const quick = document.getElementById('quickProducts');

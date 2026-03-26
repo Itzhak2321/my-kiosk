@@ -3,48 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>פינה בכיכר - עם היסטוריה</title>
+    <title>פינה בכיכר - מצב לילה</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --warning: #f39c12; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; padding-bottom: 30px; user-select: none; }
-        .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        :root { 
+            --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --warning: #f39c12;
+            --bg: #f1f3f4; --card-bg: #ffffff; --text: #2c3e50; --header-bg: #2c3e50; --input-border: #ccc;
+        }
+
+        /* הגדרות מצב לילה */
+        body.dark-mode {
+            --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --header-bg: #000000; --input-border: #444;
+        }
+
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 30px; user-select: none; transition: 0.3s; }
+        .header { background: var(--header-bg); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .container { padding: 10px; max-width: 500px; margin: auto; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .card { background: var(--card-bg); border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 92%; max-width: 400px; padding: 20px; border-radius: 20px; text-align: center; box-sizing: border-box; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); color: var(--text); width: 92%; max-width: 400px; padding: 20px; border-radius: 20px; text-align: center; box-sizing: border-box; }
         .modal-body { max-height: 350px; overflow-y: auto; margin-top: 15px; }
 
         .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); margin: 10px 0; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; color: white; }
         .btn-header { background:#455a64; color:white; border:none; padding:8px 12px; border-radius:5px; margin-right: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
         
         .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #ddd; padding: 10px; border-radius: 15px; }
-        .num-btn { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 8px; }
+        body.dark-mode .numpad-grid { background: #333; }
+        .num-btn { background: var(--card-bg); color: var(--text); border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 8px; }
 
         .hidden { display: none; }
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 16px; background: var(--card-bg); color: var(--text); }
         
         .prod-btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 10px 0; }
-        .prod-btn-quick { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; }
+        .prod-btn-quick { background: var(--card-bg); border: 1px solid var(--input-border); padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; }
         
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
-        .status-msg { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 20px; border-radius: 20px; font-weight: bold; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(128,128,128,0.1); margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
+        .status-msg { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 20px; border-radius: 20px; font-weight: bold; background: var(--card-bg); color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         
-        /* עיצוב היסטוריה */
-        .history-list { margin-top: 15px; text-align: right; font-size: 13px; max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
-        .hist-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+        .history-list { margin-top: 15px; text-align: right; font-size: 13px; max-height: 150px; overflow-y: auto; border-top: 1px solid var(--input-border); padding-top: 10px; }
+        .hist-item { padding: 5px 0; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; }
         .hist-date { color: #888; font-size: 11px; }
+        
+        #themeToggle { background: none; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 10px; }
     </style>
 </head>
-<body>
+<body class="">
 
 <div class="header">
-    <div style="font-size: 18px; font-weight: bold;">פינה בכיכר</div>
+    <div style="display: flex; align-items: center;">
+        <button id="themeToggle" onclick="toggleTheme()">🌙</button>
+        <div style="font-size: 18px; font-weight: bold;">פינה בכיכר 🌳</div>
+    </div>
     <div style="display: flex;">
         <button onclick="openProductsModal()" class="btn-header">🛍️ מוצרים</button>
         <button onclick="toggleAdmin()" class="btn-header">⚙️ ניהול</button>
@@ -58,15 +72,15 @@
         <h3 style="margin:0 0 10px 0; color:var(--primary);">👤 ניהול לקוחות</h3>
         <input type="text" id="custName" placeholder="שם הלקוח">
         <input type="text" id="custPhone" placeholder="מספר טלפון">
-        <button onclick="addCustomer()" class="btn" style="background:var(--primary); color:white; padding: 10px;">+ הוסף לקוח</button>
-        <div id="customerList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid #eee; padding:5px; border-radius: 8px;"></div>
-        <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
-        <h3 style="margin:0 0 10px 0; color:var(--dark);">📦 ניהול מלאי מוצרים</h3>
+        <button onclick="addCustomer()" class="btn" style="background:var(--primary);">+ הוסף לקוח</button>
+        <div id="customerList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid var(--input-border); padding:5px; border-radius: 8px;"></div>
+        <hr style="margin:20px 0; border:0; border-top:1px solid var(--input-border);">
+        <h3 style="margin:0 0 10px 0;">📦 ניהול מלאי מוצרים</h3>
         <input type="text" id="regBarcode" placeholder="סרוק ברקוד...">
         <input type="text" id="regName" placeholder="שם מוצר">
         <input type="number" id="regPrice" placeholder="מחיר">
-        <button onclick="saveProduct()" class="btn" style="background:var(--dark); color:white; padding: 10px;">💾 שמור מוצר</button>
-        <div id="inventoryList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid #eee; padding:5px; border-radius: 8px;"></div>
+        <button onclick="saveProduct()" class="btn" style="background:var(--text); color: var(--card-bg);">💾 שמור מוצר</button>
+        <div id="inventoryList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid var(--input-border); padding:5px; border-radius: 8px;"></div>
     </div>
 
     <div class="card" style="border-right: 5px solid var(--primary); padding: 10px;">
@@ -81,22 +95,22 @@
         </div>
         <div class="total-box" id="totalDisplay">0.00 ₪</div>
         <div style="display:flex; gap:10px;">
-            <button onclick="clearCart()" class="btn" style="background:#ddd; flex:1;">🗑️ נקה</button>
+            <button onclick="clearCart()" class="btn" style="background:#888; flex:1;">🗑️ נקה</button>
             <button id="chargeBtn" onclick="chargeCustomer()" class="btn" style="background:var(--warning); flex:2;">חייב כרטיסייה 💳</button>
         </div>
     </div>
 
-    <div class="card" style="background:#e9ecef; border:none;">
-        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:28px; border:none; background:transparent; width:100%; margin-bottom:10px; font-weight:bold; color:var(--dark);">
+    <div class="card" style="background:rgba(128,128,128,0.1); border:none;">
+        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:28px; border:none; background:transparent; width:100%; margin-bottom:10px; font-weight:bold;">
         <div class="numpad-grid">
             <button class="num-btn" onclick="addNum('7')">7</button>
             <button class="num-btn" onclick="addNum('8')">8</button>
             <button class="num-btn" onclick="addNum('9')">9</button>
-            <button class="num-btn" onclick="clearNum()" style="background:#ffcdd2; color:var(--danger)">C</button>
+            <button class="num-btn" onclick="clearNum()" style="background:var(--danger); color:white">C</button>
             <button class="num-btn" onclick="addNum('4')">4</button>
             <button class="num-btn" onclick="addNum('5')">5</button>
             <button class="num-btn" onclick="addNum('6')">6</button>
-            <button class="num-btn" onclick="addNum(' X ')" style="background:#ffe0b2;">X</button>
+            <button class="num-btn" onclick="addNum(' X ')" style="background:var(--warning); color:white">X</button>
             <button class="num-btn" onclick="addNum('1')">1</button>
             <button class="num-btn" onclick="addNum('2')">2</button>
             <button class="num-btn" onclick="addNum('3')">3</button>
@@ -110,18 +124,15 @@
 <div id="customerModal" class="modal">
     <div class="modal-content">
         <h2 id="mCustName" style="margin-bottom:0;">שם לקוח</h2>
-        <p id="mCustPhone" style="color:#666; margin:5px 0;"></p>
+        <p id="mCustPhone" style="color:#888; margin:5px 0;"></p>
         <div style="font-size:32px; font-weight:bold; color:var(--danger); margin:10px 0;" id="mCustBalance">0.00 ₪</div>
-        
         <input type="number" id="payAmount" placeholder="סכום תשלום מזומן...">
-        <button onclick="payDebt()" class="btn" style="background:var(--success); color:white; padding:10px;">בצע זיכוי ✅</button>
-        
+        <button onclick="payDebt()" class="btn" style="background:var(--success);">בצע זיכוי ✅</button>
         <div class="history-list" id="mHistory">
             <b>היסטוריה אחרונה:</b>
             <div id="historyContent">טוען...</div>
         </div>
-        
-        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 15px;">סגור</button>
+        <button onclick="closeCustomerModal()" class="btn" style="background:#888; padding: 10px; margin-top: 15px;">סגור</button>
         <button id="delBtnStep1" onclick="showDeleteConfirm()" style="background:none; border:none; color:red; text-decoration:underline; font-size:12px; margin-top:10px; cursor:pointer;">מחק לקוח לצמיתות</button>
         <button id="delBtnActual" onclick="deleteCustomerActual()" class="btn" style="background:red; color:white; display:none;">בטוח? לחץ למחיקה סופית</button>
     </div>
@@ -132,7 +143,7 @@
         <h2 style="margin: 0 0 10px 0;">🛍️ בחירת מוצר</h2>
         <input type="text" id="quickSearchInput" placeholder="🔍 חפש מוצר..." oninput="filterQuickProducts()">
         <div id="productsBody" class="modal-body prod-btn-grid"></div>
-        <button onclick="closeProductsModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 15px;">סגור</button>
+        <button onclick="closeProductsModal()" class="btn" style="background:#888; padding: 10px; margin-top: 15px;">סגור</button>
     </div>
 </div>
 
@@ -151,6 +162,19 @@
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
 
     let cart = [], customers = {}, inventory = {}, selectedCustId = null;
+
+    // ניהול מצב לילה
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeToggle').innerText = isDark ? '☀️' : '🌙';
+    }
+    // טעינת מצב לילה שמור
+    if(localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeToggle').innerText = '☀️';
+    }
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
     function showStatus(t) {
@@ -195,7 +219,6 @@
         }
     });
 
-    // פתיחת כרטיס לקוח עם היסטוריה
     function openCustomerModal(id) {
         selectedCustId = id;
         document.getElementById('mCustName').innerText = customers[id].name;
@@ -203,23 +226,16 @@
         document.getElementById('mCustBalance').innerText = customers[id].balance.toFixed(2) + " ₪";
         document.getElementById('delBtnStep1').style.display = 'inline-block';
         document.getElementById('delBtnActual').style.display = 'none';
-        
-        // טעינת היסטוריה
         const histDiv = document.getElementById('historyContent');
         histDiv.innerHTML = 'טוען...';
         db.ref('history/' + id).limitToLast(10).once('value', snap => {
             const data = snap.val();
-            if(!data) { histDiv.innerHTML = 'אין פעולות קודמות'; return; }
+            if(!data) { histDiv.innerHTML = 'אין פעולות'; return; }
             histDiv.innerHTML = '';
             Object.values(data).reverse().forEach(h => {
-                histDiv.innerHTML += `<div class="hist-item">
-                    <span>${h.desc}</span>
-                    <span style="font-weight:bold; color:${h.amount > 0 ? 'red':'green'}">${h.amount > 0 ? '+' : ''}${h.amount.toFixed(2)}₪</span>
-                    <span class="hist-date">${h.date}</span>
-                </div>`;
+                histDiv.innerHTML += `<div class="hist-item"><span>${h.desc}</span><span style="font-weight:bold; color:${h.amount > 0 ? 'red':'var(--success)'}">${h.amount > 0 ? '+' : ''}${h.amount.toFixed(2)}₪</span><span class="hist-date">${h.date}</span></div>`;
             });
         });
-        
         document.getElementById('customerModal').style.display = 'flex';
     }
 
@@ -235,8 +251,8 @@
         const amount = parseFloat(document.getElementById('payAmount').value);
         if(!amount || !selectedCustId) return;
         db.ref('customers/' + selectedCustId + '/balance').set(customers[selectedCustId].balance - amount).then(() => {
-            logHistory(selectedCustId, -amount, "תשלום מזומן/זיכוי");
-            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("בוצע זיכוי");
+            logHistory(selectedCustId, -amount, "תשלום מזומן");
+            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("עודכן!");
         });
     }
 
@@ -246,20 +262,19 @@
         if(id === 'walkin' || total === 0) return;
         const desc = cart.map(i => i.name).join(', ').substring(0, 30);
         db.ref('customers/' + id + '/balance').set((customers[id].balance || 0) + total).then(() => {
-            logHistory(id, total, desc || "קנייה כללית");
-            cart = []; updateUI(); showStatus("חויב בכרטיסייה");
+            logHistory(id, total, desc || "קנייה");
+            cart = []; updateUI(); showStatus("חויב!");
         });
     }
 
     function showDeleteConfirm() { document.getElementById('delBtnStep1').style.display='none'; document.getElementById('delBtnActual').style.display='block'; }
     function deleteCustomerActual() { db.ref('customers/'+selectedCustId).remove(); db.ref('history/'+selectedCustId).remove(); closeCustomerModal(); }
 
-    // פונקציות מוצרים
     function openProductsModal() { document.getElementById('productsModal').style.display = 'flex'; renderQuickProducts(inventory); }
     function closeProductsModal() { document.getElementById('productsModal').style.display = 'none'; }
     function renderQuickProducts(data) {
         const body = document.getElementById('productsBody'); body.innerHTML = '';
-        for (let b in data) body.innerHTML += `<div class="prod-btn-quick" onclick="addQuickProduct('${data[b].name}', ${data[b].price})"><b>${data[b].name}</b><br><small>${data[b].price.toFixed(2)} ₪</small></div>`;
+        for (let b in data) body.innerHTML += `<div class="prod-btn-quick" onclick="addQuickProduct('${data[b].name}', ${data[b].price})"><b>${data[b].name}</b><br><span>${data[b].price.toFixed(2)} ₪</span></div>`;
     }
     function filterQuickProducts() {
         const term = document.getElementById('quickSearchInput').value.toLowerCase();

@@ -3,94 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>קופה חכמה - ניהול לקוחות</title>
+    <title>קופה חכמה - גרסה יציבה</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <style>
         :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --warning: #f1c40f; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; padding-bottom: 30px; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; padding-bottom: 30px; user-select: none; }
         .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .container { padding: 10px; max-width: 500px; margin: auto; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        /* בחירת לקוח */
         .customer-select { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--primary); font-size: 16px; margin-bottom: 10px; background: white; }
-        
-        .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); }
+        .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); margin: 10px 0; }
         .cart-table { width: 100%; border-collapse: collapse; }
-        .cart-table td { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .cart-table td { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 18px; }
 
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
         .btn-pay { background: var(--success); color: white; }
         .btn-debt { background: var(--warning); color: #000; }
         
         .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #ddd; padding: 10px; border-radius: 15px; }
-        .num-btn { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 8px; }
+        .num-btn { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 0 #bbb; }
+        .num-btn:active { background: #f0f0f0; transform: translateY(1px); }
 
         .hidden { display: none; }
         .admin-panel { background: #fff; padding: 15px; border-radius: 15px; border-top: 5px solid var(--dark); margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
-        .customer-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .status-msg { text-align: center; font-weight: bold; padding: 5px; border-radius: 5px; margin-top: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div style="font-size: 18px; font-weight: bold;">My Kiosk 📱</div>
-    <button onclick="toggleAdmin()" style="background:#455a64; color:white; border:none; padding:8px; border-radius:5px;">⚙️ ניהול</button>
+    <button onclick="toggleAdmin()" style="background:#455a64; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold;">⚙️ ניהול</button>
 </div>
 
 <div class="container">
     
+    <div id="statusMsg" class="status-msg hidden"></div>
+
     <div id="adminSection" class="admin-panel hidden">
-        <h4 style="margin:0 0 10px 0">ניהול לקוחות</h4>
+        <h4 style="margin:0 0 10px 0; color:var(--primary);">👤 ניהול לקוחות</h4>
         <input type="text" id="custName" placeholder="שם לקוח">
         <input type="text" id="custPhone" placeholder="טלפון (מזהה)">
         <button onclick="addCustomer()" class="btn" style="background:var(--primary); color:white; padding:10px;">+ הוסף לקוח</button>
-        <div id="customerList" style="margin-top:10px; max-height:100px; overflow-y:auto;"></div>
-        <hr>
-        <h4 style="margin:10px 0">ניהול מלאי</h4>
-        <input type="text" id="regBarcode" placeholder="ברקוד">
+        <div id="customerList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid #eee; padding:5px;"></div>
+        
+        <hr style="margin:15px 0; border:0; border-top:1px solid #ddd;">
+        
+        <h4 style="margin:0 0 10px 0; color:var(--dark);">📦 ניהול מלאי</h4>
+        <input type="text" id="regBarcode" placeholder="סרוק ברקוד...">
         <input type="text" id="regName" placeholder="שם מוצר">
-        <input type="number" id="regPrice" placeholder="מחיר">
-        <button onclick="saveProduct()" class="btn" style="background:var(--dark); color:white; padding:10px;">שמור מוצר</button>
+        <input type="number" id="regPrice" placeholder="מחיר בש''ח">
+        <button onclick="saveProduct()" class="btn" style="background:var(--dark); color:white; padding:10px;">💾 שמור מוצר</button>
     </div>
 
-    <div class="card">
-        <label style="display:block; margin-bottom:5px; font-weight:bold;">בחר לקוח (לכרטיסייה):</label>
+    <div class="card" style="border-right: 5px solid var(--primary);">
+        <label style="display:block; margin-bottom:5px; font-weight:bold; font-size:14px;">כרטיסייה פעילה:</label>
         <select id="activeCustomer" class="customer-select">
             <option value="walkin">לקוח מזדמן (מזומן)</option>
         </select>
-        <div id="customerBalanceInfo" style="font-size:14px; color:var(--primary); font-weight:bold;"></div>
     </div>
 
     <div class="card">
-        <table class="cart-table" id="cartTable"><tbody></tbody></table>
+        <div style="max-height: 180px; overflow-y: auto;">
+            <table class="cart-table" id="cartTable"><tbody></tbody></table>
+        </div>
         <div class="total-box" id="totalDisplay">0.00 ₪</div>
         <div style="display:flex; gap:10px;">
-            <button onclick="clearCart()" class="btn" style="background:#ccc;">נקה</button>
-            <button id="chargeBtn" onclick="chargeCustomer()" class="btn btn-debt">חייב כרטיסייה 💳</button>
+            <button onclick="clearCart()" class="btn" style="background:#ddd; flex:1;">🗑️ נקה</button>
+            <button id="chargeBtn" onclick="chargeCustomer()" class="btn btn-debt" style="flex:2;">حייב כרטיסייה 💳</button>
         </div>
     </div>
 
-    <div class="card" style="background:#eee;">
-        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:24px; border:none; background:transparent; width:100%; font-weight:bold;">
+    <div class="card" style="background:#e9ecef;">
+        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:28px; border:none; background:transparent; width:100%; font-weight:bold; color:var(--dark);">
         <div class="numpad-grid">
             <button class="num-btn" onclick="addNum('7')">7</button>
             <button class="num-btn" onclick="addNum('8')">8</button>
             <button class="num-btn" onclick="addNum('9')">9</button>
-            <button class="num-btn" onclick="clearNum()" style="color:var(--danger)">C</button>
+            <button class="num-btn" onclick="clearNum()" style="background:#ffcdd2; color:var(--danger)">C</button>
+            
             <button class="num-btn" onclick="addNum('4')">4</button>
             <button class="num-btn" onclick="addNum('5')">5</button>
             <button class="num-btn" onclick="addNum('6')">6</button>
-            <button class="num-btn" onclick="addNum(' X ')" style="background:orange">X</button>
+            <button class="num-btn" onclick="addNum(' X ')" style="background:#ffe0b2;">X</button>
+            
             <button class="num-btn" onclick="addNum('1')">1</button>
             <button class="num-btn" onclick="addNum('2')">2</button>
             <button class="num-btn" onclick="addNum('3')">3</button>
-            <button class="num-btn" onclick="addManualPrice()" style="grid-row: span 2; background:var(--success); color:white;">+</button>
+            <button class="num-btn" onclick="addManualPrice()" style="grid-row: span 2; background:var(--success); color:white;">➕</button>
+            
             <button class="num-btn" onclick="addNum('0')" style="grid-column: span 2;">0</button>
             <button class="num-btn" onclick="addNum('.')">.</button>
         </div>
@@ -116,16 +125,27 @@
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
 
-    // פונקציית הקישור מהאפליקציה (Kodular)
+    function showStatus(text, type = 'success') {
+        const msg = document.getElementById('statusMsg');
+        msg.innerText = text;
+        msg.className = `status-msg`;
+        msg.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+        msg.style.color = type === 'success' ? '#155724' : '#721c24';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
     function updateBarcode(barcode) {
-        if (!document.getElementById('adminSection').classList.contains('hidden')) {
+        const adminOpen = !document.getElementById('adminSection').classList.contains('hidden');
+        if (adminOpen) {
             document.getElementById('regBarcode').value = barcode;
+            document.getElementById('regName').focus();
             beep.play();
         } else {
             db.ref('inventory/' + barcode).once('value', snap => {
                 const p = snap.val();
                 if (p) addToCart(p.name, p.price);
-                else alert("מוצר לא רשום");
+                else showStatus("מוצר לא רשום במערכת", "error");
             });
         }
     }
@@ -140,13 +160,12 @@
         const tbody = document.querySelector('#cartTable tbody');
         tbody.innerHTML = ''; currentTotal = 0;
         cart.forEach((item, i) => {
-            tbody.innerHTML += `<tr><td>${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${i},1);updateUI()" style="color:red; width:30px; text-align:center;">✕</td></tr>`;
+            tbody.innerHTML += `<tr><td>${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${i},1);updateUI()" style="color:var(--danger); width:30px; text-align:center; font-weight:bold;">✕</td></tr>`;
             currentTotal += item.price;
         });
         document.getElementById('totalDisplay').innerText = currentTotal.toFixed(2) + " ₪";
     }
 
-    // --- ניהול לקוחות ---
     function addCustomer() {
         const name = document.getElementById('custName').value;
         const phone = document.getElementById('custPhone').value;
@@ -154,6 +173,7 @@
             db.ref('customers/' + phone).set({ name: name, balance: 0 }).then(() => {
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
+                showStatus("לקוח נוסף בהצלחה");
             });
         }
     }
@@ -164,33 +184,30 @@
         const list = document.getElementById('customerList');
         select.innerHTML = '<option value="walkin">לקוח מזדמן (מזומן)</option>';
         list.innerHTML = '';
-        
         for (let phone in customers) {
             select.innerHTML += `<option value="${phone}">${customers[phone].name}</option>`;
-            list.innerHTML += `<div class="customer-item"><span>${customers[phone].name}</span> <span>${customers[phone].balance.toFixed(2)}₪</span> <button onclick="deleteCustomer('${phone}')" style="color:red; border:none; background:none;">מחק</button></div>`;
+            list.innerHTML += `<div class="customer-item"><b>${customers[phone].name}</b> <span>${customers[phone].balance.toFixed(2)}₪</span> <button onclick="deleteCustomer('${phone}')" style="color:red; border:1px solid red; background:none; border-radius:3px; padding:2px 5px;">מחק</button></div>`;
         }
     });
 
-    function deleteCustomer(phone) { if(confirm('למחוק לקוח?')) db.ref('customers/' + phone).remove(); }
+    function deleteCustomer(phone) { db.ref('customers/' + phone).remove(); }
 
-    // --- חיוב כרטיסייה ---
     function chargeCustomer() {
         const phone = document.getElementById('activeCustomer').value;
         if (phone === 'walkin') {
-            alert("בחר לקוח מהרשימה כדי לחייב כרטיסייה");
+            showStatus("אנא בחר לקוח לחיוב", "error");
             return;
         }
         if (currentTotal === 0) return;
 
-        const newBalance = customers[phone].balance + currentTotal;
+        const newBalance = (customers[phone].balance || 0) + currentTotal;
         db.ref('customers/' + phone + '/balance').set(newBalance).then(() => {
-            alert(`חויב! יתרה חדשה ל${customers[phone].name}: ${newBalance.toFixed(2)} ₪`);
+            showStatus(`חויב! יתרה ל${customers[phone].name}: ${newBalance.toFixed(2)}₪`);
             cart = [];
             updateUI();
         });
     }
 
-    // מקלדת וניהול מלאי רגיל
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
     function addManualPrice() {
@@ -208,7 +225,12 @@
     function saveProduct() {
         const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
         if (b && n && p) {
-            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => alert("נשמר!"));
+            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => {
+                document.getElementById('regBarcode').value = '';
+                document.getElementById('regName').value = '';
+                document.getElementById('regPrice').value = '';
+                showStatus("המוצר נשמר במלאי");
+            });
         }
     }
 </script>

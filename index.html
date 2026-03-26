@@ -3,106 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>קופה חכמה v3.5</title>
+    <title>קופה חכמה - ניהול לקוחות</title>
     
-    <meta name="theme-color" content="#2c3e50">
-    <meta name="mobile-web-app-capable" content="yes">
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; user-select: none; padding-bottom: 30px; overflow-x: hidden; }
-        .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .admin-btn { background: #455a64; border: none; color: white; padding: 8px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --warning: #f1c40f; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: #f1f3f4; padding-bottom: 30px; }
+        .header { background: var(--dark); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .container { padding: 10px; max-width: 500px; margin: auto; }
-        
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .total-box { font-size: 40px; font-weight: bold; text-align: center; margin: 10px 0; color: var(--success); }
-        .cart-table { width: 100%; border-collapse: collapse; }
-        .cart-table td { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 18px; }
         
-        #saleReader { width: 100%; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 15px; border: 3px solid var(--primary); }
-        .scan-toggle-btn { width: 100%; padding: 20px; border: none; border-radius: 15px; font-size: 20px; font-weight: bold; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-open { background: var(--primary); color: white; }
-        .btn-close { background: var(--danger); color: white; }
+        /* בחירת לקוח */
+        .customer-select { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--primary); font-size: 16px; margin-bottom: 10px; background: white; }
+        
+        .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); }
+        .cart-table { width: 100%; border-collapse: collapse; }
+        .cart-table td { padding: 10px 0; border-bottom: 1px solid #eee; }
 
-        .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #ddd; padding: 10px; border-radius: 15px; }
-        .num-btn { background: white; border: none; padding: 20px 5px; font-size: 22px; font-weight: bold; border-radius: 10px; box-shadow: 0 3px 0 #bbb; }
-        .num-btn:active { background: #eee; transform: translateY(2px); box-shadow: none; }
-        .num-btn.add { background: var(--success); color: white; grid-column: span 2; box-shadow: 0 3px 0 #1e7e34; }
-        .num-btn.clr { background: var(--danger); color: white; box-shadow: 0 3px 0 #a71d2a; }
-        .num-btn.mul { background: #ff9800; color: white; box-shadow: 0 3px 0 #e68a00; }
-
-        .search-input { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; }
-        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-        .prod-btn { background: white; border: 1px solid #ddd; padding: 15px 5px; border-radius: 12px; text-align: center; }
-        .prod-btn b { display: block; font-size: 15px; margin-bottom: 5px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-pay { background: var(--success); color: white; }
+        .btn-debt { background: var(--warning); color: #000; }
+        
+        .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #ddd; padding: 10px; border-radius: 15px; }
+        .num-btn { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 8px; }
 
         .hidden { display: none; }
-        .admin-panel { background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-top: 5px solid var(--dark); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .admin-panel { background: #fff; padding: 15px; border-radius: 15px; border-top: 5px solid var(--dark); margin-bottom: 15px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        
+        .customer-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div style="font-size: 18px; font-weight: bold;">My Kiosk 📱</div>
-    <button class="admin-btn" onclick="toggleAdmin()">⚙️ ניהול מלאי</button>
+    <button onclick="toggleAdmin()" style="background:#455a64; color:white; border:none; padding:8px; border-radius:5px;">⚙️ ניהול</button>
 </div>
 
 <div class="container">
+    
     <div id="adminSection" class="admin-panel hidden">
-        <h3 style="margin-top:0">הוספת מוצר חדש</h3>
-        <p style="font-size: 14px; color: #666;">סרוק ברקוד באפליקציה כשהתפריט הזה פתוח</p>
-        <input type="text" id="regBarcode" placeholder="ברקוד (נסרק אוטומטית)">
-        <input type="text" id="regName" placeholder="שם המוצר">
-        <input type="number" id="regPrice" placeholder="מחיר בשקלים">
-        <button onclick="saveToCloud()" style="width:100%; padding:15px; background:var(--dark); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">💾 שמור במלאי</button>
-        <div id="adminInventory" style="margin-top:15px; font-size:14px; border-top:1px solid #eee; padding-top:10px; max-height: 150px; overflow-y: auto;"></div>
+        <h4 style="margin:0 0 10px 0">ניהול לקוחות</h4>
+        <input type="text" id="custName" placeholder="שם לקוח">
+        <input type="text" id="custPhone" placeholder="טלפון (מזהה)">
+        <button onclick="addCustomer()" class="btn" style="background:var(--primary); color:white; padding:10px;">+ הוסף לקוח</button>
+        <div id="customerList" style="margin-top:10px; max-height:100px; overflow-y:auto;"></div>
+        <hr>
+        <h4 style="margin:10px 0">ניהול מלאי</h4>
+        <input type="text" id="regBarcode" placeholder="ברקוד">
+        <input type="text" id="regName" placeholder="שם מוצר">
+        <input type="number" id="regPrice" placeholder="מחיר">
+        <button onclick="saveProduct()" class="btn" style="background:var(--dark); color:white; padding:10px;">שמור מוצר</button>
     </div>
 
-    <div class="card" style="border-top: 5px solid var(--success);">
-        <div style="max-height: 200px; overflow-y: auto;">
-            <table class="cart-table" id="cartTable"><tbody></tbody></table>
-        </div>
+    <div class="card">
+        <label style="display:block; margin-bottom:5px; font-weight:bold;">בחר לקוח (לכרטיסייה):</label>
+        <select id="activeCustomer" class="customer-select">
+            <option value="walkin">לקוח מזדמן (מזומן)</option>
+        </select>
+        <div id="customerBalanceInfo" style="font-size:14px; color:var(--primary); font-weight:bold;"></div>
+    </div>
+
+    <div class="card">
+        <table class="cart-table" id="cartTable"><tbody></tbody></table>
         <div class="total-box" id="totalDisplay">0.00 ₪</div>
-        <button onclick="clearCart()" style="width:100%; background:none; border:none; color:var(--danger); font-weight:bold; padding:10px; font-size:16px; cursor:pointer;">🗑️ נקה סל</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="clearCart()" class="btn" style="background:#ccc;">נקה</button>
+            <button id="chargeBtn" onclick="chargeCustomer()" class="btn btn-debt">חייב כרטיסייה 💳</button>
+        </div>
     </div>
 
-    <button id="mainScanBtn" class="scan-toggle-btn btn-open" onclick="handleScanButton()" style="display:none;">
-        📷 סרוק מוצר
-    </button>
-
-    <div class="card" style="background:#e9ecef; border:none;">
-        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:32px; border:none; background:transparent; width:100%; margin-bottom:10px; font-weight:bold; color:var(--dark);">
+    <div class="card" style="background:#eee;">
+        <input type="text" id="manualPrice" readonly placeholder="0.00" style="text-align:center; font-size:24px; border:none; background:transparent; width:100%; font-weight:bold;">
         <div class="numpad-grid">
             <button class="num-btn" onclick="addNum('7')">7</button>
             <button class="num-btn" onclick="addNum('8')">8</button>
             <button class="num-btn" onclick="addNum('9')">9</button>
-            <button class="num-btn clr" onclick="clearNum()">C</button>
+            <button class="num-btn" onclick="clearNum()" style="color:var(--danger)">C</button>
             <button class="num-btn" onclick="addNum('4')">4</button>
             <button class="num-btn" onclick="addNum('5')">5</button>
             <button class="num-btn" onclick="addNum('6')">6</button>
-            <button class="num-btn mul" onclick="addNum(' X ')">X</button>
+            <button class="num-btn" onclick="addNum(' X ')" style="background:orange">X</button>
             <button class="num-btn" onclick="addNum('1')">1</button>
             <button class="num-btn" onclick="addNum('2')">2</button>
             <button class="num-btn" onclick="addNum('3')">3</button>
+            <button class="num-btn" onclick="addManualPrice()" style="grid-row: span 2; background:var(--success); color:white;">+</button>
+            <button class="num-btn" onclick="addNum('0')" style="grid-column: span 2;">0</button>
             <button class="num-btn" onclick="addNum('.')">.</button>
-            <button class="num-btn" onclick="addNum('0')">0</button>
-            <button class="num-btn add" onclick="addManualPrice()">➕ הוסף לסל</button>
         </div>
-    </div>
-
-    <div style="margin: 20px 0;">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 חיפוש מוצר במלאי..." oninput="filterProducts()">
-        <div class="quick-grid" id="quickProducts"></div>
     </div>
 </div>
 
 <script>
-    // הגדרות Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCOWSN0aVOpvsguY0CFDR477mKVMj17o98",
         authDomain: "mykiosk-55b08.firebaseapp.com",
@@ -117,62 +112,85 @@
     const db = firebase.database();
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
 
-    let cart = [], inventoryData = {};
+    let cart = [], customers = {}, currentTotal = 0;
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
 
-    // פונקציית הקישור לאפליקציה - הסורק קורא לזה!
+    // פונקציית הקישור מהאפליקציה (Kodular)
     function updateBarcode(barcode) {
-        const adminSection = document.getElementById('adminSection');
-        
-        if (!adminSection.classList.contains('hidden')) {
-            // אם תפריט הניהול פתוח - הברקוד הולך לשדה הרישום
+        if (!document.getElementById('adminSection').classList.contains('hidden')) {
             document.getElementById('regBarcode').value = barcode;
-            document.getElementById('regName').value = '';
-            document.getElementById('regPrice').value = '';
-            document.getElementById('regName').focus(); // מעביר פוקוס לשם
             beep.play();
         } else {
-            // אם התפריט סגור - מכירה רגילה
-            processSale(barcode);
+            db.ref('inventory/' + barcode).once('value', snap => {
+                const p = snap.val();
+                if (p) addToCart(p.name, p.price);
+                else alert("מוצר לא רשום");
+            });
         }
-    }
-
-    function processSale(barcode) {
-        db.ref('inventory/' + barcode).once('value').then(snap => {
-            const p = snap.val();
-            if (p) {
-                addToCart(p.name, p.price);
-            } else {
-                alert("מוצר לא רשום: " + barcode);
-            }
-        });
     }
 
     function addToCart(name, price) {
         cart.push({ name, price });
-        updateCartUI();
+        updateUI();
         beep.play();
     }
 
-    function updateCartUI() {
+    function updateUI() {
         const tbody = document.querySelector('#cartTable tbody');
-        tbody.innerHTML = ''; 
-        let total = 0;
-        cart.forEach((item, index) => {
-            tbody.innerHTML += `<tr><td style="font-weight:600">${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="removeFromCart(${index})" style="color:var(--danger);width:40px;text-align:center;font-size:22px;">✕</td></tr>`;
-            total += item.price;
+        tbody.innerHTML = ''; currentTotal = 0;
+        cart.forEach((item, i) => {
+            tbody.innerHTML += `<tr><td>${item.name}</td><td style="text-align:left">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${i},1);updateUI()" style="color:red; width:30px; text-align:center;">✕</td></tr>`;
+            currentTotal += item.price;
         });
-        document.getElementById('totalDisplay').innerText = total.toFixed(2) + " ₪";
+        document.getElementById('totalDisplay').innerText = currentTotal.toFixed(2) + " ₪";
     }
 
-    function removeFromCart(index) {
-        cart.splice(index, 1);
-        updateCartUI();
+    // --- ניהול לקוחות ---
+    function addCustomer() {
+        const name = document.getElementById('custName').value;
+        const phone = document.getElementById('custPhone').value;
+        if (name && phone) {
+            db.ref('customers/' + phone).set({ name: name, balance: 0 }).then(() => {
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+            });
+        }
     }
 
-    function clearCart() { if(cart.length > 0 && confirm("לנקות את הסל?")) { cart = []; updateCartUI(); } }
+    db.ref('customers').on('value', snap => {
+        customers = snap.val() || {};
+        const select = document.getElementById('activeCustomer');
+        const list = document.getElementById('customerList');
+        select.innerHTML = '<option value="walkin">לקוח מזדמן (מזומן)</option>';
+        list.innerHTML = '';
+        
+        for (let phone in customers) {
+            select.innerHTML += `<option value="${phone}">${customers[phone].name}</option>`;
+            list.innerHTML += `<div class="customer-item"><span>${customers[phone].name}</span> <span>${customers[phone].balance.toFixed(2)}₪</span> <button onclick="deleteCustomer('${phone}')" style="color:red; border:none; background:none;">מחק</button></div>`;
+        }
+    });
 
+    function deleteCustomer(phone) { if(confirm('למחוק לקוח?')) db.ref('customers/' + phone).remove(); }
+
+    // --- חיוב כרטיסייה ---
+    function chargeCustomer() {
+        const phone = document.getElementById('activeCustomer').value;
+        if (phone === 'walkin') {
+            alert("בחר לקוח מהרשימה כדי לחייב כרטיסייה");
+            return;
+        }
+        if (currentTotal === 0) return;
+
+        const newBalance = customers[phone].balance + currentTotal;
+        db.ref('customers/' + phone + '/balance').set(newBalance).then(() => {
+            alert(`חויב! יתרה חדשה ל${customers[phone].name}: ${newBalance.toFixed(2)} ₪`);
+            cart = [];
+            updateUI();
+        });
+    }
+
+    // מקלדת וניהול מלאי רגיל
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
     function addManualPrice() {
@@ -180,55 +198,17 @@
         if (!val) return;
         if (val.includes(' X ')) {
             const parts = val.split(' X ');
-            const qty = parseFloat(parts[0]);
-            const price = parseFloat(parts[1]);
-            if (qty && price) addToCart(`כמות: ${qty}`, qty * price);
+            addToCart(`כמות: ${parts[0]}`, parseFloat(parts[0]) * parseFloat(parts[1]));
         } else {
             addToCart("כללי", parseFloat(val));
         }
         clearNum();
     }
-
-    function saveToCloud() {
-        const b = document.getElementById('regBarcode').value;
-        const n = document.getElementById('regName').value;
-        const p = document.getElementById('regPrice').value;
+    function clearCart() { cart = []; updateUI(); }
+    function saveProduct() {
+        const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
         if (b && n && p) {
-            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => {
-                document.getElementById('regBarcode').value = '';
-                document.getElementById('regName').value = '';
-                document.getElementById('regPrice').value = '';
-                alert("המוצר נשמר במלאי!");
-            });
-        } else {
-            alert("חובה למלא את כל השדות");
-        }
-    }
-
-    // חיפוש ומלאי
-    db.ref('inventory').on('value', snap => {
-        inventoryData = snap.val() || {};
-        filterProducts();
-        const adminInv = document.getElementById('adminInventory');
-        adminInv.innerHTML = '';
-        for (let id in inventoryData) {
-            adminInv.innerHTML += `<div style="padding:5px 0; border-bottom:1px solid #eee;">• ${inventoryData[id].name} (${inventoryData[id].price}₪) <span onclick="deleteProduct('${id}')" style="color:red; float:left; cursor:pointer;">מחק</span></div>`;
-        }
-    });
-
-    function deleteProduct(id) {
-        if(confirm('למחוק את המוצר לצמיתות?')) db.ref('inventory/' + id).remove();
-    }
-
-    function filterProducts() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        const quick = document.getElementById('quickProducts');
-        quick.innerHTML = '';
-        for (let id in inventoryData) {
-            const p = inventoryData[id];
-            if (p.name.toLowerCase().includes(term)) {
-                quick.innerHTML += `<div class="prod-btn card" onclick="addToCart('${p.name}', ${p.price})"><b>${p.name}</b><span style="color:var(--success); font-weight:bold;">${p.price} ₪</span></div>`;
-            }
+            db.ref('inventory/' + b).set({ name: n, price: parseFloat(p) }).then(() => alert("נשמר!"));
         }
     }
 </script>

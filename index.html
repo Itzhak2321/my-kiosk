@@ -36,6 +36,8 @@
 
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
         .status-msg { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 20px; border-radius: 20px; font-weight: bold; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .btn-delete-cust { background: none; color: var(--danger); font-size: 13px; text-decoration: underline; margin-top: 20px; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -114,7 +116,9 @@
         <hr style="border:0; border-top:1px solid #eee;">
         <input type="number" id="payAmount" placeholder="סכום זיכוי/תשלום...">
         <button onclick="payDebt()" class="btn" style="background:var(--success); color:white;">בצע זיכוי ✅</button>
-        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 10px;">סגור</button>
+        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 10px;">סגור חלון</button>
+        
+        <button onclick="deleteCustomerActual()" class="btn-delete-cust">מחק לקוח זה לצמיתות</button>
     </div>
 </div>
 
@@ -171,11 +175,11 @@
         document.getElementById('totalDisplay').innerText = total.toFixed(2) + " ₪";
     }
 
-    // לקוחות
     function addCustomer() {
         const n = document.getElementById('custName').value, p = document.getElementById('custPhone').value;
         if(n && p) db.ref('customers/' + p).set({name: n, balance: 0}).then(() => {
             document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
+            showStatus("לקוח נוסף בהצלחה");
         });
     }
 
@@ -199,20 +203,30 @@
         document.getElementById('customerModal').style.display = 'flex';
     }
     function closeCustomerModal() { document.getElementById('customerModal').style.display = 'none'; }
+    
     function payDebt() {
         const amount = parseFloat(document.getElementById('payAmount').value);
         if(!amount || !selectedCustId) return;
         db.ref('customers/' + selectedCustId + '/balance').set(customers[selectedCustId].balance - amount).then(() => {
-            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("בוצע זיכוי");
+            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("היתרה עודכנה!");
         });
     }
 
-    // מוצרים
+    // פונקציית המחיקה החדשה
+    function deleteCustomerActual() {
+        if (!selectedCustId) return;
+        if (confirm(`האם אתה בטוח שברצונך למחוק את ${customers[selectedCustId].name}? כל נתוני החוב יימחקו.`)) {
+            db.ref('customers/' + selectedCustId).remove().then(() => {
+                closeCustomerModal();
+                showStatus("הלקוח נמחק מהמערכת");
+            });
+        }
+    }
+
     function openProductsModal() {
         document.getElementById('productsModal').style.display = 'flex';
         document.getElementById('quickSearchInput').value = '';
         renderQuickProducts(inventory);
-        // הסרתי את הפוקוס האוטומטי לבקשתך
     }
     function closeProductsModal() { document.getElementById('productsModal').style.display = 'none'; }
     function renderQuickProducts(data) {
@@ -232,6 +246,7 @@
         const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
         if(b && n && p) db.ref('inventory/' + b).set({name: n, price: parseFloat(p)}).then(() => {
             document.getElementById('regBarcode').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPrice').value = '';
+            showStatus("מוצר נשמר במלאי");
         });
     }
     db.ref('inventory').on('value', snap => {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>פינה בכיכר - גרסה יציבה</title>
+    <title>פינה בכיכר - עם היסטוריה</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
@@ -16,11 +16,11 @@
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; max-width: 400px; padding: 20px; border-radius: 20px; text-align: center; }
+        .modal-content { background: white; width: 92%; max-width: 400px; padding: 20px; border-radius: 20px; text-align: center; box-sizing: border-box; }
         .modal-body { max-height: 350px; overflow-y: auto; margin-top: 15px; }
 
         .total-box { font-size: 40px; font-weight: bold; text-align: center; color: var(--success); margin: 10px 0; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
         .btn-header { background:#455a64; color:white; border:none; padding:8px 12px; border-radius:5px; margin-right: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
         
         .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #ddd; padding: 10px; border-radius: 15px; }
@@ -31,14 +31,14 @@
         
         .prod-btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 10px 0; }
         .prod-btn-quick { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; }
-        .prod-btn-quick b { display: block; font-size: 15px; margin-bottom: 5px; color: #333; }
-        .prod-btn-quick span { color: var(--success); font-weight: bold; font-size: 14px; }
-
+        
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
         .status-msg { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 20px; border-radius: 20px; font-weight: bold; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .btn-delete-step1 { background: none; color: var(--danger); font-size: 13px; text-decoration: underline; margin-top: 20px; border: none; cursor: pointer; }
-        .btn-delete-confirm { background: var(--danger); color: white; padding: 10px; border-radius: 10px; margin-top: 15px; display: none; }
+        /* עיצוב היסטוריה */
+        .history-list { margin-top: 15px; text-align: right; font-size: 13px; max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .hist-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+        .hist-date { color: #888; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -60,9 +60,7 @@
         <input type="text" id="custPhone" placeholder="מספר טלפון">
         <button onclick="addCustomer()" class="btn" style="background:var(--primary); color:white; padding: 10px;">+ הוסף לקוח</button>
         <div id="customerList" style="margin-top:10px; max-height:150px; overflow-y:auto; border:1px solid #eee; padding:5px; border-radius: 8px;"></div>
-        
         <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
-        
         <h3 style="margin:0 0 10px 0; color:var(--dark);">📦 ניהול מלאי מוצרים</h3>
         <input type="text" id="regBarcode" placeholder="סרוק ברקוד...">
         <input type="text" id="regName" placeholder="שם מוצר">
@@ -111,17 +109,21 @@
 
 <div id="customerModal" class="modal">
     <div class="modal-content">
-        <h2 id="mCustName">שם לקוח</h2>
-        <p id="mCustPhone" style="color:#666; margin:0;"></p>
-        <div style="font-size:36px; font-weight:bold; color:var(--danger); margin:15px 0;" id="mCustBalance">0.00 ₪</div>
-        <hr style="border:0; border-top:1px solid #eee;">
-        <input type="number" id="payAmount" placeholder="סכום זיכוי/תשלום...">
-        <button onclick="payDebt()" class="btn" style="background:var(--success); color:white;">בצע זיכוי ✅</button>
-        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 10px;">סגור</button>
+        <h2 id="mCustName" style="margin-bottom:0;">שם לקוח</h2>
+        <p id="mCustPhone" style="color:#666; margin:5px 0;"></p>
+        <div style="font-size:32px; font-weight:bold; color:var(--danger); margin:10px 0;" id="mCustBalance">0.00 ₪</div>
         
-        <br>
-        <button id="delBtnStep1" onclick="showDeleteConfirm()" class="btn-delete-step1">מחק לקוח לצמיתות</button>
-        <button id="delBtnActual" onclick="deleteCustomerActual()" class="btn btn-delete-confirm">בטוח? לחץ כאן למחיקה סופית</button>
+        <input type="number" id="payAmount" placeholder="סכום תשלום מזומן...">
+        <button onclick="payDebt()" class="btn" style="background:var(--success); color:white; padding:10px;">בצע זיכוי ✅</button>
+        
+        <div class="history-list" id="mHistory">
+            <b>היסטוריה אחרונה:</b>
+            <div id="historyContent">טוען...</div>
+        </div>
+        
+        <button onclick="closeCustomerModal()" class="btn" style="background:#ddd; padding: 10px; margin-top: 15px;">סגור</button>
+        <button id="delBtnStep1" onclick="showDeleteConfirm()" style="background:none; border:none; color:red; text-decoration:underline; font-size:12px; margin-top:10px; cursor:pointer;">מחק לקוח לצמיתות</button>
+        <button id="delBtnActual" onclick="deleteCustomerActual()" class="btn" style="background:red; color:white; display:none;">בטוח? לחץ למחיקה סופית</button>
     </div>
 </div>
 
@@ -151,9 +153,8 @@
     let cart = [], customers = {}, inventory = {}, selectedCustId = null;
 
     function toggleAdmin() { document.getElementById('adminSection').classList.toggle('hidden'); }
-    function showStatus(t, type='success') {
+    function showStatus(t) {
         const s = document.getElementById('statusMsg'); s.innerText = t;
-        s.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
         s.classList.remove('hidden'); setTimeout(() => s.classList.add('hidden'), 2500);
     }
 
@@ -162,7 +163,7 @@
             document.getElementById('regBarcode').value = barcode; beep.play();
         } else {
             db.ref('inventory/' + barcode).once('value', snap => {
-                const p = snap.val(); if(p) addToCart(p.name, p.price); else showStatus("לא רשום", "error");
+                const p = snap.val(); if(p) addToCart(p.name, p.price); else showStatus("לא רשום");
             });
         }
     }
@@ -171,7 +172,7 @@
     function updateUI() {
         const tbody = document.querySelector('#cartTable tbody'); tbody.innerHTML = ''; let total = 0;
         cart.forEach((item, i) => {
-            tbody.innerHTML += `<tr><td style="padding: 10px 0;">${item.name}</td><td style="text-align:left; font-weight:bold;">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${i},1);updateUI()" style="color:red; width:30px; text-align:center;">✕</td></tr>`;
+            tbody.innerHTML += `<tr><td style="padding:10px 0;">${item.name}</td><td style="text-align:left; font-weight:bold;">${item.price.toFixed(2)} ₪</td><td onclick="cart.splice(${i},1);updateUI()" style="color:red; width:30px; text-align:center;">✕</td></tr>`;
             total += item.price;
         });
         document.getElementById('totalDisplay').innerText = total.toFixed(2) + " ₪";
@@ -179,9 +180,7 @@
 
     function addCustomer() {
         const n = document.getElementById('custName').value, p = document.getElementById('custPhone').value;
-        if(n && p) db.ref('customers/' + p).set({name: n, balance: 0}).then(() => {
-            document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
-        });
+        if(n && p) db.ref('customers/' + p).set({name: n, balance: 0});
     }
 
     db.ref('customers').on('value', snap => {
@@ -196,6 +195,7 @@
         }
     });
 
+    // פתיחת כרטיס לקוח עם היסטוריה
     function openCustomerModal(id) {
         selectedCustId = id;
         document.getElementById('mCustName').innerText = customers[id].name;
@@ -203,72 +203,80 @@
         document.getElementById('mCustBalance').innerText = customers[id].balance.toFixed(2) + " ₪";
         document.getElementById('delBtnStep1').style.display = 'inline-block';
         document.getElementById('delBtnActual').style.display = 'none';
+        
+        // טעינת היסטוריה
+        const histDiv = document.getElementById('historyContent');
+        histDiv.innerHTML = 'טוען...';
+        db.ref('history/' + id).limitToLast(10).once('value', snap => {
+            const data = snap.val();
+            if(!data) { histDiv.innerHTML = 'אין פעולות קודמות'; return; }
+            histDiv.innerHTML = '';
+            Object.values(data).reverse().forEach(h => {
+                histDiv.innerHTML += `<div class="hist-item">
+                    <span>${h.desc}</span>
+                    <span style="font-weight:bold; color:${h.amount > 0 ? 'red':'green'}">${h.amount > 0 ? '+' : ''}${h.amount.toFixed(2)}₪</span>
+                    <span class="hist-date">${h.date}</span>
+                </div>`;
+            });
+        });
+        
         document.getElementById('customerModal').style.display = 'flex';
     }
+
     function closeCustomerModal() { document.getElementById('customerModal').style.display = 'none'; }
     
+    function logHistory(custId, amount, desc) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('he-IL') + " " + now.getHours() + ":" + (now.getMinutes()<10?'0':'') + now.getMinutes();
+        db.ref('history/' + custId).push({ amount, desc, date: dateStr });
+    }
+
     function payDebt() {
         const amount = parseFloat(document.getElementById('payAmount').value);
         if(!amount || !selectedCustId) return;
         db.ref('customers/' + selectedCustId + '/balance').set(customers[selectedCustId].balance - amount).then(() => {
-            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("עודכן!");
+            logHistory(selectedCustId, -amount, "תשלום מזומן/זיכוי");
+            document.getElementById('payAmount').value = ''; closeCustomerModal(); showStatus("בוצע זיכוי");
         });
     }
 
-    // פונקציות מחיקה ללא confirm שתוקע
-    function showDeleteConfirm() {
-        document.getElementById('delBtnStep1').style.display = 'none';
-        document.getElementById('delBtnActual').style.display = 'block';
-    }
-
-    function deleteCustomerActual() {
-        if (!selectedCustId) return;
-        db.ref('customers/' + selectedCustId).remove().then(() => {
-            closeCustomerModal();
-            showStatus("הלקוח נמחק");
+    function chargeCustomer() {
+        const id = document.getElementById('activeCustomer').value;
+        const total = parseFloat(document.getElementById('totalDisplay').innerText);
+        if(id === 'walkin' || total === 0) return;
+        const desc = cart.map(i => i.name).join(', ').substring(0, 30);
+        db.ref('customers/' + id + '/balance').set((customers[id].balance || 0) + total).then(() => {
+            logHistory(id, total, desc || "קנייה כללית");
+            cart = []; updateUI(); showStatus("חויב בכרטיסייה");
         });
     }
 
-    function openProductsModal() {
-        document.getElementById('productsModal').style.display = 'flex';
-        renderQuickProducts(inventory);
-    }
+    function showDeleteConfirm() { document.getElementById('delBtnStep1').style.display='none'; document.getElementById('delBtnActual').style.display='block'; }
+    function deleteCustomerActual() { db.ref('customers/'+selectedCustId).remove(); db.ref('history/'+selectedCustId).remove(); closeCustomerModal(); }
+
+    // פונקציות מוצרים
+    function openProductsModal() { document.getElementById('productsModal').style.display = 'flex'; renderQuickProducts(inventory); }
     function closeProductsModal() { document.getElementById('productsModal').style.display = 'none'; }
     function renderQuickProducts(data) {
         const body = document.getElementById('productsBody'); body.innerHTML = '';
-        for (let b in data) {
-            body.innerHTML += `<div class="prod-btn-quick" onclick="addQuickProduct('${data[b].name}', ${data[b].price})"><b>${data[b].name}</b><span>${data[b].price.toFixed(2)} ₪</span></div>`;
-        }
+        for (let b in data) body.innerHTML += `<div class="prod-btn-quick" onclick="addQuickProduct('${data[b].name}', ${data[b].price})"><b>${data[b].name}</b><br><small>${data[b].price.toFixed(2)} ₪</small></div>`;
     }
     function filterQuickProducts() {
         const term = document.getElementById('quickSearchInput').value.toLowerCase();
         const f = {}; for (let b in inventory) if (inventory[b].name.toLowerCase().includes(term)) f[b] = inventory[b];
         renderQuickProducts(f);
     }
-    function addQuickProduct(name, price) { addToCart(name, price); closeProductsModal(); }
+    function addQuickProduct(n, p) { addToCart(n, p); closeProductsModal(); }
 
     function saveProduct() {
         const b = document.getElementById('regBarcode').value, n = document.getElementById('regName').value, p = document.getElementById('regPrice').value;
-        if(b && n && p) db.ref('inventory/' + b).set({name: n, price: parseFloat(p)}).then(() => {
-            document.getElementById('regBarcode').value = ''; document.getElementById('regName').value = ''; document.getElementById('regPrice').value = '';
-        });
+        if(b && n && p) db.ref('inventory/' + b).set({name: n, price: parseFloat(p)});
     }
     db.ref('inventory').on('value', snap => {
         inventory = snap.val() || {};
         const list = document.getElementById('inventoryList'); list.innerHTML = '';
-        for (let b in inventory) {
-            list.innerHTML += `<div class="list-item" style="font-size:14px; cursor:default;"><span>${inventory[b].name} (${inventory[b].price.toFixed(2)}₪)</span><button onclick="db.ref('inventory/${b}').remove()" style="color:red; border:none; background:none;">מחק</button></div>`;
-        }
+        for (let b in inventory) list.innerHTML += `<div class="list-item" style="font-size:14px;"><span>${inventory[b].name} (${inventory[b].price.toFixed(2)}₪)</span><button onclick="db.ref('inventory/${b}').remove()" style="color:red; border:none; background:none;">מחק</button></div>`;
     });
-
-    function chargeCustomer() {
-        const id = document.getElementById('activeCustomer').value;
-        const total = parseFloat(document.getElementById('totalDisplay').innerText);
-        if(id === 'walkin' || total === 0) return showStatus("בחר לקוח", "error");
-        db.ref('customers/' + id + '/balance').set((customers[id].balance || 0) + total).then(() => {
-            cart = []; updateUI(); showStatus("חויב!");
-        });
-    }
 
     function addNum(n) { document.getElementById('manualPrice').value += n; }
     function clearNum() { document.getElementById('manualPrice').value = ''; }
